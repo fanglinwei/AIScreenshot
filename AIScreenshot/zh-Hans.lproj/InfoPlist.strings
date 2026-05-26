@@ -1,0 +1,2 @@
+"CFBundleDisplayName" = "AI 截图助手";
+"NSPhotoLibraryUsageDescription" = "需要访问相册，以便选择截图进行文字识别和总结。";
