@@ -2,6 +2,7 @@ import SwiftUI
 
 struct HistoryView: View {
     @EnvironmentObject private var historyStore: HistoryStore
+    @EnvironmentObject private var chatStore: ChatStore
     @State private var query = ""
 
     private var filtered: [OCRResult] {
@@ -33,15 +34,24 @@ struct HistoryView: View {
                     .padding(.vertical, 6)
                 }
             }
-            .onDelete(perform: historyStore.delete)
+            .onDelete(perform: delete)
         }
         .searchable(text: $query, prompt: "搜索识别文本或总结")
         .navigationTitle("历史记录")
         .toolbar {
             if !historyStore.items.isEmpty {
-                Button("清空") { historyStore.clear() }
+                Button("清空") {
+                    historyStore.clear()
+                    chatStore.clear()
+                }
             }
         }
+    }
+
+    private func delete(at offsets: IndexSet) {
+        let removed = offsets.map { filtered[$0] }
+        historyStore.delete(removed)
+        removed.forEach { chatStore.deleteConversation(for: $0.id) }
     }
 
     @ViewBuilder

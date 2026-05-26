@@ -18,26 +18,52 @@ final class ResultViewModel: ObservableObject {
     @Published var step: Step = .idle
     @Published var errorMessage: String?
     @Published var copied = false
+    @Published var isStreamingSummary = false
+    @Published var savedResultID: UUID?
 
     func process(image: UIImage, mode: SummaryMode, settings: AppSettings, historyStore: HistoryStore) async {
         do {
+            errorMessage = nil
+            summary = ""
+            ocrText = ""
+            savedResultID = nil
+            isStreamingSummary = false
+
             step = .ocr
             let text = try await OCRService.recognizeText(from: image)
             ocrText = text
+
+            guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                summary = "未识别到可总结的文字。"
+                step = .done
+                let result = OCRResult(title: makeTitle(from: text), ocrText: text, summary: summary, mode: mode)
+                historyStore.add(result, image: image)
+                savedResultID = result.id
+                return
+            }
 
             step = .analyzing
             try? await Task.sleep(nanoseconds: 250_000_000)
 
             step = .summary
+            isStreamingSummary = true
             let service = OpenAIService(provider: settings.provider, apiKey: settings.activeAPIKey, model: settings.activeModel)
-            let result = try await service.summarize(text: text, mode: mode)
-            summary = result
+            for try await delta in service.streamSummary(text: text, mode: mode) {
+                try Task.checkCancellation()
+                summary += delta
+            }
+            isStreamingSummary = false
 
             step = .done
             let title = makeTitle(from: text)
-            historyStore.add(OCRResult(title: title, ocrText: text, summary: result, mode: mode), image: image)
+            let result = OCRResult(title: title, ocrText: text, summary: summary, mode: mode)
+            historyStore.add(result, image: image)
+            savedResultID = result.id
             if settings.autoCopy { copyAll() }
+        } catch is CancellationError {
+            isStreamingSummary = false
         } catch {
+            isStreamingSummary = false
             errorMessage = error.localizedDescription
             step = .failed
         }

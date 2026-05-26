@@ -20,7 +20,7 @@ struct HistoryDetailView: View {
                     systemImage: "sparkles",
                     trailing: AnyView(CopyButton(text: item.summary))
                 ) {
-                    SelectableContentText(text: item.summary, parseMarkdown: true)
+                    MarkdownContextText(text: item.summary)
                 }
                 SectionCard(
                     title: "识别文本",
@@ -36,6 +36,21 @@ struct HistoryDetailView: View {
                         try? await Task.sleep(nanoseconds: 1_200_000_000)
                         copied = false
                     }
+                }
+
+                NavigationLink {
+                    ChatView(image: historyStore.image(for: item), resultID: item.id, ocrText: item.ocrText, summary: item.summary)
+                } label: {
+                    HStack(spacing: 10) {
+                        Image(systemName: "message.fill")
+                        Text("继续追问")
+                            .fontWeight(.semibold)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 52)
+                    .foregroundStyle(DS.ColorToken.primary)
+                    .background(DS.ColorToken.primary.opacity(0.1))
+                    .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                 }
             }
             .padding(20)

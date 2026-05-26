@@ -24,6 +24,9 @@ struct HomeView: View {
                 ResultView(image: selectedImage, mode: selectedMode)
             }
         }
+        .navigationDestination(item: $historyStore.pendingImportedItem) { item in
+            HistoryDetailView(item: item)
+        }
         .onChange(of: selectedItem) { _, item in
             Task { await loadImage(from: item) }
         }

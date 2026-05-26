@@ -16,7 +16,7 @@ struct ResultView: View {
                     showImagePreview = true
                 }
 
-                if viewModel.step != .done && viewModel.step != .failed {
+                if viewModel.step == .ocr || viewModel.step == .analyzing {
                     ProcessingView(step: viewModel.step)
                         .cardStyle()
                 }
@@ -44,15 +44,32 @@ struct ResultView: View {
                     systemImage: "sparkles",
                     trailing: AnyView(CopyButton(text: viewModel.summary))
                 ) {
-                    SelectableContentText(
+                    StreamingSummaryText(
                         text: viewModel.summary,
-                        placeholder: "正在等待 AI 总结...",
-                        parseMarkdown: true
+                        isStreaming: viewModel.isStreamingSummary
                     )
                 }
 
                 PrimaryButton(title: viewModel.copied ? "已复制" : "复制全部", systemImage: viewModel.copied ? "checkmark" : "doc.on.doc", isSuccess: viewModel.copied) {
                     viewModel.copyAll()
+                }
+
+                if !viewModel.ocrText.isEmpty || !viewModel.summary.isEmpty {
+                    NavigationLink {
+                        ChatView(image: image, resultID: viewModel.savedResultID, ocrText: viewModel.ocrText, summary: viewModel.summary)
+                    } label: {
+                        HStack(spacing: 10) {
+                            Image(systemName: "message.fill")
+                            Text("继续追问")
+                                .fontWeight(.semibold)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 52)
+                        .foregroundStyle(DS.ColorToken.primary)
+                        .background(DS.ColorToken.primary.opacity(0.1))
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+                    }
+                    .disabled(viewModel.isStreamingSummary)
                 }
             }
             .padding(20)

@@ -6,8 +6,47 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		B3E905032FC6A00000C45CCE /* ShareExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B3E905002FC6A00000C45CCE /* ShareExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		B3E906032FC6B00000C45CCE /* WidgetExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = B3E906002FC6B00000C45CCE /* WidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		B3E905082FC6A00000C45CCE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3E9046D2FC591BA00C45CCE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B3E905042FC6A00000C45CCE;
+			remoteInfo = ShareExtension;
+		};
+		B3E906082FC6B00000C45CCE /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = B3E9046D2FC591BA00C45CCE /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = B3E906042FC6B00000C45CCE;
+			remoteInfo = WidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B3E905022FC6A00000C45CCE /* Embed App Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				B3E905032FC6A00000C45CCE /* ShareExtension.appex in Embed App Extensions */,
+				B3E906032FC6B00000C45CCE /* WidgetExtension.appex in Embed App Extensions */,
+			);
+			name = "Embed App Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
 		B3E904752FC591BA00C45CCE /* AIScreenshot.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = AIScreenshot.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E905002FC6A00000C45CCE /* ShareExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = ShareExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		B3E906002FC6B00000C45CCE /* WidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = WidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -16,10 +55,34 @@
 			path = AIScreenshot;
 			sourceTree = "<group>";
 		};
+		B3E905012FC6A00000C45CCE /* ShareExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = ShareExtension;
+			sourceTree = "<group>";
+		};
+		B3E906012FC6B00000C45CCE /* WidgetExtension */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = WidgetExtension;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		B3E904722FC591BA00C45CCE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B3E905062FC6A00000C45CCE /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B3E906062FC6B00000C45CCE /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -33,6 +96,8 @@
 			isa = PBXGroup;
 			children = (
 				B3E904772FC591BA00C45CCE /* AIScreenshot */,
+				B3E905012FC6A00000C45CCE /* ShareExtension */,
+				B3E906012FC6B00000C45CCE /* WidgetExtension */,
 				B3E904762FC591BA00C45CCE /* Products */,
 			);
 			sourceTree = "<group>";
@@ -41,6 +106,8 @@
 			isa = PBXGroup;
 			children = (
 				B3E904752FC591BA00C45CCE /* AIScreenshot.app */,
+				B3E905002FC6A00000C45CCE /* ShareExtension.appex */,
+				B3E906002FC6B00000C45CCE /* WidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -55,10 +122,13 @@
 				B3E904712FC591BA00C45CCE /* Sources */,
 				B3E904722FC591BA00C45CCE /* Frameworks */,
 				B3E904732FC591BA00C45CCE /* Resources */,
+				B3E905022FC6A00000C45CCE /* Embed App Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				B3E905092FC6A00000C45CCE /* PBXTargetDependency */,
+				B3E906092FC6B00000C45CCE /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				B3E904772FC591BA00C45CCE /* AIScreenshot */,
@@ -69,6 +139,50 @@
 			productName = AIScreenshot;
 			productReference = B3E904752FC591BA00C45CCE /* AIScreenshot.app */;
 			productType = "com.apple.product-type.application";
+		};
+		B3E905042FC6A00000C45CCE /* ShareExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B3E9050A2FC6A00000C45CCE /* Build configuration list for PBXNativeTarget "ShareExtension" */;
+			buildPhases = (
+				B3E905052FC6A00000C45CCE /* Sources */,
+				B3E905062FC6A00000C45CCE /* Frameworks */,
+				B3E905072FC6A00000C45CCE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B3E905012FC6A00000C45CCE /* ShareExtension */,
+			);
+			name = ShareExtension;
+			packageProductDependencies = (
+			);
+			productName = ShareExtension;
+			productReference = B3E905002FC6A00000C45CCE /* ShareExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		B3E906042FC6B00000C45CCE /* WidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B3E9060A2FC6B00000C45CCE /* Build configuration list for PBXNativeTarget "WidgetExtension" */;
+			buildPhases = (
+				B3E906052FC6B00000C45CCE /* Sources */,
+				B3E906062FC6B00000C45CCE /* Frameworks */,
+				B3E906072FC6B00000C45CCE /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				B3E906012FC6B00000C45CCE /* WidgetExtension */,
+			);
+			name = WidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = WidgetExtension;
+			productReference = B3E906002FC6B00000C45CCE /* WidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -81,6 +195,12 @@
 				LastUpgradeCheck = 2650;
 				TargetAttributes = {
 					B3E904742FC591BA00C45CCE = {
+						CreatedOnToolsVersion = 26.5;
+					};
+					B3E905042FC6A00000C45CCE = {
+						CreatedOnToolsVersion = 26.5;
+					};
+					B3E906042FC6B00000C45CCE = {
 						CreatedOnToolsVersion = 26.5;
 					};
 				};
@@ -101,12 +221,28 @@
 			projectRoot = "";
 			targets = (
 				B3E904742FC591BA00C45CCE /* AIScreenshot */,
+				B3E905042FC6A00000C45CCE /* ShareExtension */,
+				B3E906042FC6B00000C45CCE /* WidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
 		B3E904732FC591BA00C45CCE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B3E905072FC6A00000C45CCE /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B3E906072FC6B00000C45CCE /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -123,7 +259,34 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		B3E905052FC6A00000C45CCE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B3E906052FC6B00000C45CCE /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		B3E905092FC6A00000C45CCE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B3E905042FC6A00000C45CCE /* ShareExtension */;
+			targetProxy = B3E905082FC6A00000C45CCE /* PBXContainerItemProxy */;
+		};
+		B3E906092FC6B00000C45CCE /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = B3E906042FC6B00000C45CCE /* WidgetExtension */;
+			targetProxy = B3E906082FC6B00000C45CCE /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
 
 /* Begin XCBuildConfiguration section */
 		B3E9047E2FC591BB00C45CCE /* Debug */ = {
@@ -250,12 +413,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AIScreenshot/AIScreenshot.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 34Z49UTC7S;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/AIScreenshotInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI 截图助手";
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"com.fun.AIScreenshot\";\n    CFBundleURLSchemes =     (\n        aiscreenshot\n    );\n}";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问相册，以便选择截图进行文字识别和总结。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -285,12 +451,15 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				CODE_SIGN_ENTITLEMENTS = AIScreenshot/AIScreenshot.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = 34Z49UTC7S;
 				ENABLE_PREVIEWS = YES;
-				GENERATE_INFOPLIST_FILE = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/AIScreenshotInfo.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = "AI 截图助手";
+				INFOPLIST_KEY_CFBundleURLTypes = "{\n    CFBundleURLName = \"com.fun.AIScreenshot\";\n    CFBundleURLSchemes =     (\n        aiscreenshot\n    );\n}";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "需要访问相册，以便选择截图进行文字识别和总结。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -306,6 +475,122 @@
 				PRODUCT_BUNDLE_IDENTIFIER = com.fun.AIScreenshot;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B3E9050B2FC6A00000C45CCE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 34Z49UTC7S;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/ShareExtensionInfo.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fun.AIScreenshot.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B3E9050C2FC6A00000C45CCE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = ShareExtension/ShareExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 34Z49UTC7S;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/ShareExtensionInfo.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fun.AIScreenshot.ShareExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Release;
+		};
+		B3E9060B2FC6B00000C45CCE /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = WidgetExtension/WidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 34Z49UTC7S;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/WidgetExtensionInfo.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fun.AIScreenshot.WidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		B3E9060C2FC6B00000C45CCE /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = WidgetExtension/WidgetExtension.entitlements;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 34Z49UTC7S;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Config/WidgetExtensionInfo.plist;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.4;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fun.AIScreenshot.WidgetExtension;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SKIP_INSTALL = YES;
 				SWIFT_APPROACHABLE_CONCURRENCY = YES;
 				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
 				SWIFT_EMIT_LOC_STRINGS = YES;
@@ -332,6 +617,24 @@
 			buildConfigurations = (
 				B3E904812FC591BB00C45CCE /* Debug */,
 				B3E904822FC591BB00C45CCE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B3E9050A2FC6A00000C45CCE /* Build configuration list for PBXNativeTarget "ShareExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B3E9050B2FC6A00000C45CCE /* Debug */,
+				B3E9050C2FC6A00000C45CCE /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B3E9060A2FC6B00000C45CCE /* Build configuration list for PBXNativeTarget "WidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				B3E9060B2FC6B00000C45CCE /* Debug */,
+				B3E9060C2FC6B00000C45CCE /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;

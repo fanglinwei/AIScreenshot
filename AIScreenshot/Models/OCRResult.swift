@@ -1,6 +1,6 @@
 import Foundation
 
-struct OCRResult: Identifiable, Codable, Equatable {
+struct OCRResult: Identifiable, Codable, Equatable, Hashable {
     let id: UUID
     var createdAt: Date
     var title: String
