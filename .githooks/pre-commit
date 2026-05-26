@@ -1,0 +1,23 @@
+#!/bin/sh
+
+branch="$(git symbolic-ref --quiet --short HEAD)"
+
+case "$branch" in
+  develop|feature/*|bugfix/*|release/*|hotfix/*|support/*)
+    exit 0
+    ;;
+  main|master)
+    echo "Git Flow: direct commits to '$branch' are blocked."
+    echo "Create a feature/*, bugfix/*, release/*, or hotfix/* branch instead."
+    exit 1
+    ;;
+  "")
+    echo "Git Flow: detached HEAD commits are blocked."
+    exit 1
+    ;;
+  *)
+    echo "Git Flow: branch '$branch' does not follow the required naming pattern."
+    echo "Use develop, feature/*, bugfix/*, release/*, hotfix/*, or support/*."
+    exit 1
+    ;;
+esac
