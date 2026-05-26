@@ -15,7 +15,7 @@ struct StreamingSummaryText: View {
                 ThinkingIndicator()
             }
 
-            MarkdownContextText(text: displayText)
+            AIContentText(text: displayText)
 
             if isStreaming, !text.isEmpty {
                 HStack {

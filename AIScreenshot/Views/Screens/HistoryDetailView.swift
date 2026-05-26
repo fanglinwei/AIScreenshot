@@ -20,7 +20,7 @@ struct HistoryDetailView: View {
                     systemImage: "sparkles",
                     trailing: AnyView(CopyButton(text: item.summary))
                 ) {
-                    MarkdownContextText(text: item.summary)
+                    AIContentText(text: item.summary)
                 }
                 SectionCard(
                     title: "识别文本",
@@ -56,6 +56,7 @@ struct HistoryDetailView: View {
             .padding(20)
         }
         .background(DS.ColorToken.background.ignoresSafeArea())
+        .clearsSelectableTextSelectionOnTap()
         .navigationTitle(item.title)
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showImagePreview) {

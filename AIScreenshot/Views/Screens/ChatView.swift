@@ -11,6 +11,7 @@ struct ChatView: View {
     @StateObject private var viewModel = ChatViewModel()
     @State private var showImagePreview = false
     @State private var isContextExpanded = false
+    @FocusState private var isChatInputFocused: Bool
 
     var body: some View {
         VStack(spacing: 0) {
@@ -41,6 +42,18 @@ struct ChatView: View {
                     }
                     .padding(16)
                 }
+                .contentShape(Rectangle())
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        isChatInputFocused = false
+                    }
+                )
+                .simultaneousGesture(
+                    DragGesture(minimumDistance: 8).onChanged { _ in
+                        isChatInputFocused = false
+                    }
+                )
+                .scrollDismissesKeyboard(.immediately)
                 .background(DS.ColorToken.background)
                 .onChange(of: viewModel.messages) { _, messages in
                     guard let last = messages.last else { return }
@@ -52,6 +65,7 @@ struct ChatView: View {
 
             chatInput
         }
+        .clearsSelectableTextSelectionOnTap()
         .navigationTitle("继续追问")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showImagePreview) {
@@ -78,10 +92,9 @@ struct ChatView: View {
                 trailing: AnyView(contextToggleButton)
             ) {
                 if isContextExpanded {
-                    MarkdownContextText(text: contextFullText)
+                    AIContentText(text: contextFullText)
                 } else {
-                    MarkdownContextText(text: contextPreview)
-                        .lineLimit(4)
+                    AIContentText(text: contextPreview, lineLimit: 4)
                 }
             }
         }
@@ -141,9 +154,12 @@ struct ChatView: View {
                 TextField("问问这张截图...", text: $viewModel.inputText, axis: .vertical)
                     .lineLimit(1...4)
                     .textFieldStyle(.plain)
+                    .focused($isChatInputFocused)
+                    .foregroundStyle(DS.ColorToken.textPrimary)
+                    .tint(DS.ColorToken.primary)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 12)
-                    .background(.white)
+                    .background(DS.ColorToken.card)
                     .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
                     .overlay(
                         RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous)

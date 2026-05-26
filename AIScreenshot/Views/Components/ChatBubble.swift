@@ -19,7 +19,6 @@ struct ChatBubble: View {
 
                 HStack(alignment: .bottom, spacing: 4) {
                     messageText
-                        .font(.body)
                         .foregroundStyle(isUser ? .white : DS.ColorToken.textPrimary)
                         .textSelection(.enabled)
 
@@ -44,10 +43,16 @@ struct ChatBubble: View {
     @ViewBuilder
     private var messageText: some View {
         let display = message.content.isEmpty ? "正在思考..." : message.content
-        if !isUser, let markdown = try? AttributedString(markdown: display) {
-            Text(markdown)
-        } else {
+        if isUser {
             Text(display)
+                .font(.body)
+                .foregroundStyle(.white)
+        } else if message.content.isEmpty {
+            Text(display)
+                .font(.body)
+                .foregroundStyle(DS.ColorToken.textPrimary)
+        } else {
+            AIContentText(text: display, style: .assistantChat)
         }
     }
 }

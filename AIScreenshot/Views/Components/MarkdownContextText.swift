@@ -2,37 +2,38 @@ import SwiftUI
 
 struct MarkdownContextText: View {
     let text: String
+    var style = Style()
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: style.spacing) {
             ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
                 switch block {
                 case let .heading(level, content):
                     inlineText(content)
-                        .font(level == 1 ? .headline : .subheadline.weight(.semibold))
-                        .foregroundStyle(DS.ColorToken.textPrimary)
+                        .font(level == 1 ? style.headingFont : style.subheadingFont)
+                        .foregroundStyle(style.headingColor)
                 case let .bullet(content):
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("•")
-                            .font(.subheadline)
-                            .foregroundStyle(DS.ColorToken.textSecondary)
+                            .font(style.bodyFont)
+                            .foregroundStyle(style.markerColor)
                         inlineText(content)
-                            .font(.subheadline)
-                            .foregroundStyle(DS.ColorToken.textSecondary)
+                            .font(style.bodyFont)
+                            .foregroundStyle(style.bodyColor)
                     }
                 case let .numbered(index, content):
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
                         Text("\(index).")
-                            .font(.subheadline)
-                            .foregroundStyle(DS.ColorToken.textSecondary)
+                            .font(style.bodyFont)
+                            .foregroundStyle(style.markerColor)
                         inlineText(content)
-                            .font(.subheadline)
-                            .foregroundStyle(DS.ColorToken.textSecondary)
+                            .font(style.bodyFont)
+                            .foregroundStyle(style.bodyColor)
                     }
                 case let .paragraph(content):
                     inlineText(content)
-                        .font(.subheadline)
-                        .foregroundStyle(DS.ColorToken.textSecondary)
+                        .font(style.bodyFont)
+                        .foregroundStyle(style.bodyColor)
                 }
             }
         }
@@ -138,5 +139,25 @@ struct MarkdownContextText: View {
         case bullet(String)
         case numbered(index: Int, content: String)
         case paragraph(String)
+    }
+
+    struct Style {
+        var headingFont: Font = .headline
+        var subheadingFont: Font = .subheadline.weight(.semibold)
+        var bodyFont: Font = .subheadline
+        var headingColor: Color = DS.ColorToken.textPrimary
+        var bodyColor: Color = DS.ColorToken.textSecondary
+        var markerColor: Color = DS.ColorToken.textSecondary
+        var spacing: CGFloat = 8
+
+        static let assistantChat = Style(
+            headingFont: .body.weight(.semibold),
+            subheadingFont: .body.weight(.semibold),
+            bodyFont: .body,
+            headingColor: DS.ColorToken.textPrimary,
+            bodyColor: DS.ColorToken.textPrimary,
+            markerColor: DS.ColorToken.textSecondary,
+            spacing: 8
+        )
     }
 }

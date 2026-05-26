@@ -75,6 +75,7 @@ struct ResultView: View {
             .padding(20)
         }
         .background(DS.ColorToken.background.ignoresSafeArea())
+        .clearsSelectableTextSelectionOnTap()
         .navigationTitle("处理结果")
         .navigationBarTitleDisplayMode(.inline)
         .fullScreenCover(isPresented: $showImagePreview) {
