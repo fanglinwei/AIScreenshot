@@ -4,17 +4,15 @@ struct HistoryDetailView: View {
     let item: OCRResult
     @EnvironmentObject private var historyStore: HistoryStore
     @State private var copied = false
+    @State private var showImagePreview = false
 
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
                 if let image = historyStore.image(for: item) {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFit()
-                        .frame(maxHeight: 240)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                        .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
+                    ImagePreviewThumbnail(image: image, height: 240, showsFullImage: true) {
+                        showImagePreview = true
+                    }
                 }
 
                 SectionCard(
@@ -45,5 +43,10 @@ struct HistoryDetailView: View {
         .background(DS.ColorToken.background.ignoresSafeArea())
         .navigationTitle(item.title)
         .navigationBarTitleDisplayMode(.inline)
+        .fullScreenCover(isPresented: $showImagePreview) {
+            if let image = historyStore.image(for: item) {
+                ZoomableImageView(image: image)
+            }
+        }
     }
 }

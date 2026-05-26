@@ -48,6 +48,10 @@ struct SettingsView: View {
                 }
 
                 Picker("模型", selection: $settings.model) {
+                    Text("gpt-5.5").tag("gpt-5.5")
+                    Text("gpt-5.4").tag("gpt-5.4")
+                    Text("gpt-5.4-mini").tag("gpt-5.4-mini")
+                    Text("gpt-5.4-nano").tag("gpt-5.4-nano")
                     Text("gpt-4.1-mini").tag("gpt-4.1-mini")
                     Text("gpt-4.1").tag("gpt-4.1")
                     Text("gpt-4o-mini").tag("gpt-4o-mini")

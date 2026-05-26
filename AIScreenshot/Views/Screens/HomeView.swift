@@ -37,9 +37,10 @@ struct HomeView: View {
                     .foregroundStyle(DS.ColorToken.primary)
                 Text("助手")
                     .font(.largeTitle.bold())
+                    .foregroundStyle(DS.ColorToken.textPrimary)
                 Text("从截图中提取文字，并快速生成摘要、翻译或待办。")
                     .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DS.ColorToken.textSecondary)
             }
             Spacer()
             Image(systemName: "crown.fill")
@@ -55,9 +56,10 @@ struct HomeView: View {
                 .foregroundStyle(DS.ColorToken.primary)
             Text("上传截图")
                 .font(.headline)
+                .foregroundStyle(DS.ColorToken.textPrimary)
             Text("支持 PNG、JPG、HEIC")
                 .font(.caption)
-                .foregroundStyle(.secondary)
+                .foregroundStyle(DS.ColorToken.textSecondary)
 
             PhotosPicker(selection: $selectedItem, matching: .images) {
                 HStack {
@@ -77,7 +79,7 @@ struct HomeView: View {
         .padding(26)
         .background(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
-                .fill(.white.opacity(0.88))
+                .fill(DS.ColorToken.elevatedCard)
         )
         .overlay(
             RoundedRectangle(cornerRadius: DS.Radius.xl, style: .continuous)
@@ -99,13 +101,14 @@ struct HomeView: View {
         VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Text("最近记录").font(.headline)
+                    .foregroundStyle(DS.ColorToken.textPrimary)
                 Spacer()
                 NavigationLink("查看全部") { HistoryView() }
                     .font(.caption.weight(.semibold))
             }
             if historyStore.items.isEmpty {
                 Text("暂无最近截图。")
-                    .foregroundStyle(.secondary)
+                    .foregroundStyle(DS.ColorToken.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .cardStyle()
             } else {
@@ -115,7 +118,7 @@ struct HomeView: View {
                             recentThumbnail(for: item)
                             VStack(alignment: .leading) {
                                 Text(item.title).font(.subheadline.weight(.semibold)).lineLimit(1)
-                                Text(item.createdAt, style: .date).font(.caption).foregroundStyle(.secondary)
+                                Text(item.createdAt, style: .date).font(.caption).foregroundStyle(DS.ColorToken.textSecondary)
                             }
                             Spacer()
                             Text(item.mode.rawValue)

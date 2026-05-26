@@ -18,7 +18,8 @@ SwiftUI MVP for an AI OCR + summary iOS app.
 4. Set deployment target to iOS 17+.
 5. Run on device or simulator.
 6. Open Settings in the app, choose OpenAI or DeepSeek, then paste the matching API key.
-7. DeepSeek uses the latest V4 model IDs: `deepseek-v4-flash` and `deepseek-v4-pro`.
+7. OpenAI defaults to the latest `gpt-5.5` model, with `gpt-5.4`, `gpt-5.4-mini`, and `gpt-5.4-nano` available.
+8. DeepSeek uses the latest V4 model IDs: `deepseek-v4-flash` and `deepseek-v4-pro`.
 
 ## Privacy
 Add this to `Info.plist` if Xcode asks for photo access copy:
