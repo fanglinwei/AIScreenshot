@@ -12,28 +12,9 @@ struct ResultView: View {
     var body: some View {
         ScrollView {
             VStack(spacing: 18) {
-                Button {
+                ImagePreviewThumbnail(image: image) {
                     showImagePreview = true
-                } label: {
-                    Image(uiImage: image)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(height: 180)
-                        .frame(maxWidth: .infinity)
-                        .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
-                        .overlay(alignment: .bottomTrailing) {
-                            Image(systemName: "arrow.up.left.and.arrow.down.right")
-                                .font(.caption.weight(.bold))
-                                .foregroundStyle(.white)
-                                .padding(8)
-                                .background(.black.opacity(0.45))
-                                .clipShape(Circle())
-                                .padding(10)
-                        }
-                        .shadow(color: .black.opacity(0.12), radius: 18, y: 8)
-                        .contentShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
                 }
-                .buttonStyle(.plain)
 
                 if viewModel.step != .done && viewModel.step != .failed {
                     ProcessingView(step: viewModel.step)

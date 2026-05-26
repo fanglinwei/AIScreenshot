@@ -16,7 +16,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
 
     var defaultModel: String {
         switch self {
-        case .openAI: return "gpt-4.1-mini"
+        case .openAI: return "gpt-5.5"
         case .deepSeek: return "deepseek-v4-flash"
         }
     }
@@ -62,7 +62,13 @@ final class AppSettings: ObservableObject {
         self.provider = AIProvider(rawValue: savedProvider ?? "") ?? .openAI
         self.apiKey = UserDefaults.standard.string(forKey: "openai_api_key") ?? ""
         self.deepSeekAPIKey = UserDefaults.standard.string(forKey: "deepseek_api_key") ?? ""
-        self.model = UserDefaults.standard.string(forKey: "openai_model") ?? "gpt-4.1-mini"
+        let savedOpenAIModel = UserDefaults.standard.string(forKey: "openai_model")
+        switch savedOpenAIModel {
+        case "gpt-4.1-mini", nil:
+            self.model = AIProvider.openAI.defaultModel
+        default:
+            self.model = savedOpenAIModel ?? AIProvider.openAI.defaultModel
+        }
         let savedDeepSeekModel = UserDefaults.standard.string(forKey: "deepseek_model")
         switch savedDeepSeekModel {
         case "deepseek-chat", "deepseek-reasoner", nil:
