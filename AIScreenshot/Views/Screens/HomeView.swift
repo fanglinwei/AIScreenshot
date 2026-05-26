@@ -1,24 +1,37 @@
 import SwiftUI
 import PhotosUI
+import UIKit
 
 struct HomeView: View {
     @State private var selectedItem: PhotosPickerItem?
     @State private var selectedImage: UIImage?
     @State private var selectedMode: SummaryMode = .summary
+    @State private var showImageSourceDialog = false
+    @State private var showPhotoPicker = false
+    @State private var showCamera = false
+    @State private var showCameraUnavailableAlert = false
     @State private var showResult = false
     @EnvironmentObject private var historyStore: HistoryStore
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 22) {
-                header
-                heroUpload
-                modePicker
-                recentList
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 22) {
+                    header
+                    heroUpload
+                    modePicker
+                    recentList
+                }
+                .padding(20)
             }
-            .padding(20)
+            .background(DS.ColorToken.background.ignoresSafeArea())
+
+            if showImageSourceDialog {
+                imageSourceSheet
+                    .transition(.opacity.combined(with: .move(edge: .bottom)))
+            }
         }
-        .background(DS.ColorToken.background.ignoresSafeArea())
+        .animation(.spring(response: 0.28, dampingFraction: 0.86), value: showImageSourceDialog)
         .navigationDestination(isPresented: $showResult) {
             if let selectedImage {
                 ResultView(image: selectedImage, mode: selectedMode)
@@ -30,6 +43,75 @@ struct HomeView: View {
         .onChange(of: selectedItem) { _, item in
             Task { await loadImage(from: item) }
         }
+        .photosPicker(isPresented: $showPhotoPicker, selection: $selectedItem, matching: .images)
+        .fullScreenCover(isPresented: $showCamera) {
+            CameraPicker { image in
+                selectedImage = image
+                showResult = true
+            }
+        }
+        .alert("无法拍照", isPresented: $showCameraUnavailableAlert) {
+            Button("知道了", role: .cancel) {}
+        } message: {
+            Text("当前设备不支持相机拍摄。")
+        }
+    }
+
+    private var imageSourceSheet: some View {
+        ZStack(alignment: .bottom) {
+            Color.clear
+                .ignoresSafeArea()
+                .contentShape(Rectangle())
+                .onTapGesture {
+                    showImageSourceDialog = false
+                }
+
+            VStack(spacing: 12) {
+                imageSourceButton(title: "选择图片", systemImage: "photo") {
+                    showImageSourceDialog = false
+                    showPhotoPicker = true
+                }
+
+                imageSourceButton(title: "拍照", systemImage: "camera") {
+                    showImageSourceDialog = false
+                    if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                        showCamera = true
+                    } else {
+                        showCameraUnavailableAlert = true
+                    }
+                }
+            }
+            .padding(12)
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DS.Radius.lg, style: .continuous)
+                    .stroke(DS.ColorToken.border, lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.16), radius: 22, y: 10)
+            .padding(.horizontal, 18)
+            .padding(.bottom, 12)
+        }
+    }
+
+    private func imageSourceButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 12) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 22, weight: .semibold))
+                    .foregroundStyle(DS.ColorToken.primary)
+
+                Text(title)
+                    .font(.body.weight(.semibold))
+                    .foregroundStyle(DS.ColorToken.textPrimary)
+            }
+            .frame(maxWidth: .infinity)
+            .frame(height: 58)
+            .padding(.horizontal, 18)
+            .background(DS.ColorToken.card.opacity(0.72))
+            .clipShape(RoundedRectangle(cornerRadius: DS.Radius.md, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 
     private var header: some View {
@@ -64,7 +146,9 @@ struct HomeView: View {
                 .font(.caption)
                 .foregroundStyle(DS.ColorToken.textSecondary)
 
-            PhotosPicker(selection: $selectedItem, matching: .images) {
+            Button {
+                showImageSourceDialog = true
+            } label: {
                 HStack {
                     Image(systemName: "plus")
                     Text("选择图片")
