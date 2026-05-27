@@ -5,7 +5,7 @@ SwiftUI MVP for an AI OCR + summary iOS app.
 ## Features
 - Home upload screen with `PhotosPicker`
 - Vision OCR using `VNRecognizeTextRequest`
-- AI summary service wrapper for OpenAI Responses API and DeepSeek Chat Completions API
+- Multi-provider AI summary service with OpenAI, DeepSeek, Qwen, Kimi, Xiaomi MiMo, custom OpenAI-compatible endpoints, and local free fallback
 - Result screen with OCR text, AI summary, copy action
 - History screen with local persistence via `UserDefaults`
 - Settings screen with provider switch, API key input, model selection, auto-copy option
@@ -17,9 +17,9 @@ SwiftUI MVP for an AI OCR + summary iOS app.
 3. Drag all folders in this package into the Xcode project.
 4. Set deployment target to iOS 17+.
 5. Run on device or simulator.
-6. Open Settings in the app, choose OpenAI or DeepSeek, then paste the matching API key.
-7. OpenAI defaults to the latest `gpt-5.5` model, with `gpt-5.4`, `gpt-5.4-mini`, and `gpt-5.4-nano` available.
-8. DeepSeek uses the latest V4 model IDs: `deepseek-v4-flash` and `deepseek-v4-pro`.
+6. Open Settings in the app, choose a provider, then paste the matching API key.
+7. Choose Local Free if you want OCR-based summary without any API key.
+8. Custom provider accepts any OpenAI-compatible `/chat/completions` endpoint.
 
 ## Privacy
 Add this to `Info.plist` if Xcode asks for photo access copy:

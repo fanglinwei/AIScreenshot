@@ -4,6 +4,8 @@ struct OpenAIService {
     let provider: AIProvider
     let apiKey: String
     let model: String
+    let baseURL: String
+    let fallbackToLocal: Bool
 
     func summarize(text: String, mode: SummaryMode) async throws -> String {
         var result = ""
@@ -14,88 +16,33 @@ struct OpenAIService {
     }
 
     func streamSummary(text: String, mode: SummaryMode) -> AsyncThrowingStream<String, Error> {
-        guard !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard provider != .local, !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return Self.localFallbackSummaryStream(text: text, mode: mode, provider: provider)
         }
 
         switch provider {
         case .openAI:
             return streamOpenAI(text: text, mode: mode)
-        case .deepSeek:
-            return streamDeepSeek(text: text, mode: mode)
+        case .local:
+            return Self.localFallbackSummaryStream(text: text, mode: mode, provider: provider)
+        case .deepSeek, .qwen, .kimi, .xiaomi, .custom:
+            return streamChatCompletions(text: text, mode: mode)
         }
     }
 
     func streamChat(ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
-        guard !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+        guard provider != .local, !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return Self.localFallbackChatStream(messages: messages, provider: provider)
         }
 
         switch provider {
         case .openAI:
             return streamOpenAIChat(ocrText: ocrText, summary: summary, messages: messages)
-        case .deepSeek:
-            return streamDeepSeekChat(ocrText: ocrText, summary: summary, messages: messages)
+        case .local:
+            return Self.localFallbackChatStream(messages: messages, provider: provider)
+        case .deepSeek, .qwen, .kimi, .xiaomi, .custom:
+            return streamChatCompletionsChat(ocrText: ocrText, summary: summary, messages: messages)
         }
-    }
-
-    private func summarizeWithOpenAI(text: String, mode: SummaryMode) async throws -> String {
-        let url = URL(string: "https://api.openai.com/v1/responses")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let payload: [String: Any] = [
-            "model": model,
-            "input": [
-                ["role": "system", "content": PromptService.summarySystemPrompt(for: mode)],
-                ["role": "user", "content": PromptService.summaryUserPrompt(ocrText: text)]
-            ]
-        ]
-
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw APIError.badResponse(String(data: data, encoding: .utf8) ?? "AI 服务返回异常，请稍后重试。")
-        }
-
-        let decoded = try JSONDecoder().decode(ResponsesAPIResult.self, from: data)
-        if let output = decoded.output.first,
-           let content = output.content.first,
-           let text = content.text {
-            return text
-        }
-        return "AI 没有返回可用总结。"
-    }
-
-    private func summarizeWithDeepSeek(text: String, mode: SummaryMode) async throws -> String {
-        let url = URL(string: "https://api.deepseek.com/chat/completions")!
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-
-        let payload: [String: Any] = [
-            "model": model,
-            "messages": [
-                ["role": "system", "content": PromptService.summarySystemPrompt(for: mode)],
-                ["role": "user", "content": PromptService.summaryUserPrompt(ocrText: text)]
-            ],
-            "stream": false
-        ]
-
-        request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-        let (data, response) = try await URLSession.shared.data(for: request)
-        guard let http = response as? HTTPURLResponse, (200..<300).contains(http.statusCode) else {
-            throw APIError.badResponse(String(data: data, encoding: .utf8) ?? "AI 服务返回异常，请稍后重试。")
-        }
-
-        let decoded = try JSONDecoder().decode(ChatCompletionsAPIResult.self, from: data)
-        if let content = decoded.choices.first?.message.content, !content.isEmpty {
-            return content
-        }
-        return "AI 没有返回可用总结。"
     }
 
     private func streamOpenAI(text: String, mode: SummaryMode) -> AsyncThrowingStream<String, Error> {
@@ -120,7 +67,7 @@ struct OpenAIService {
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload)
                     try await stream(request: request, provider: .openAI, continuation: continuation)
                 } catch {
-                    continuation.finish(throwing: error)
+                    finishSummaryStreamAfterError(error, text: text, mode: mode, continuation: continuation)
                 }
             }
 
@@ -128,11 +75,13 @@ struct OpenAIService {
         }
     }
 
-    private func streamDeepSeek(text: String, mode: SummaryMode) -> AsyncThrowingStream<String, Error> {
+    private func streamChatCompletions(text: String, mode: SummaryMode) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let url = URL(string: "https://api.deepseek.com/chat/completions")!
+                    guard let url = URL(string: baseURL), !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                        throw APIError.badResponse("请在设置中填写有效的接口地址和模型名称。")
+                    }
                     var request = URLRequest(url: url)
                     request.httpMethod = "POST"
                     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -148,9 +97,9 @@ struct OpenAIService {
                     ]
 
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-                    try await stream(request: request, provider: .deepSeek, continuation: continuation)
+                    try await stream(request: request, provider: provider, continuation: continuation)
                 } catch {
-                    continuation.finish(throwing: error)
+                    finishSummaryStreamAfterError(error, text: text, mode: mode, continuation: continuation)
                 }
             }
 
@@ -178,7 +127,7 @@ struct OpenAIService {
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload)
                     try await stream(request: request, provider: .openAI, continuation: continuation)
                 } catch {
-                    continuation.finish(throwing: error)
+                    finishChatStreamAfterError(error, messages: messages, continuation: continuation)
                 }
             }
 
@@ -186,11 +135,13 @@ struct OpenAIService {
         }
     }
 
-    private func streamDeepSeekChat(ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
+    private func streamChatCompletionsChat(ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let url = URL(string: "https://api.deepseek.com/chat/completions")!
+                    guard let url = URL(string: baseURL), !model.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+                        throw APIError.badResponse("请在设置中填写有效的接口地址和模型名称。")
+                    }
                     var request = URLRequest(url: url)
                     request.httpMethod = "POST"
                     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
@@ -203,9 +154,9 @@ struct OpenAIService {
                     ]
 
                     request.httpBody = try JSONSerialization.data(withJSONObject: payload)
-                    try await stream(request: request, provider: .deepSeek, continuation: continuation)
+                    try await stream(request: request, provider: provider, continuation: continuation)
                 } catch {
-                    continuation.finish(throwing: error)
+                    finishChatStreamAfterError(error, messages: messages, continuation: continuation)
                 }
             }
 
@@ -224,6 +175,43 @@ struct OpenAIService {
         })
 
         return payload
+    }
+
+    private func finishSummaryStreamAfterError(
+        _ error: Error,
+        text: String,
+        mode: SummaryMode,
+        continuation: AsyncThrowingStream<String, Error>.Continuation
+    ) {
+        guard fallbackToLocal else {
+            continuation.finish(throwing: error)
+            return
+        }
+
+        let summary = Self.localFallbackSummary(text: text, mode: mode, provider: provider)
+        continuation.yield("\n\n\(summary)")
+        continuation.finish()
+    }
+
+    private func finishChatStreamAfterError(
+        _ error: Error,
+        messages: [ChatMessage],
+        continuation: AsyncThrowingStream<String, Error>.Continuation
+    ) {
+        guard fallbackToLocal else {
+            continuation.finish(throwing: error)
+            return
+        }
+
+        let question = messages.last(where: { $0.role == .user })?.content ?? "这个截图是什么意思？"
+        continuation.yield("""
+        当前 \(provider.displayName) 服务暂时不可用，已切换为本地免费回复。
+
+        你刚才的问题是：\(question)
+
+        本地模式可以保留问题和上下文，但无法像云端模型一样进行深度推理。
+        """)
+        continuation.finish()
     }
 
     private func stream(
@@ -321,27 +309,5 @@ struct OpenAIService {
         var errorDescription: String? {
             switch self { case .badResponse(let message): return message }
         }
-    }
-}
-
-private struct ResponsesAPIResult: Decodable {
-    let output: [Output]
-    struct Output: Decodable {
-        let content: [Content]
-    }
-    struct Content: Decodable {
-        let text: String?
-    }
-}
-
-private struct ChatCompletionsAPIResult: Decodable {
-    let choices: [Choice]
-
-    struct Choice: Decodable {
-        let message: Message
-    }
-
-    struct Message: Decodable {
-        let content: String
     }
 }

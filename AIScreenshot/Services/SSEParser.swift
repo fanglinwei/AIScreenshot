@@ -23,7 +23,7 @@ struct SSEParser {
         switch provider {
         case .openAI:
             return openAITextDelta(from: object)
-        case .deepSeek:
+        case .local, .deepSeek, .qwen, .kimi, .xiaomi, .custom:
             return chatCompletionsTextDelta(from: object)
         }
     }

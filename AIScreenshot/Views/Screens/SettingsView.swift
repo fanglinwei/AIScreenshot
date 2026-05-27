@@ -4,6 +4,10 @@ struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     @State private var revealOpenAIKey = false
     @State private var revealDeepSeekKey = false
+    @State private var revealQwenKey = false
+    @State private var revealKimiKey = false
+    @State private var revealXiaomiKey = false
+    @State private var revealCustomKey = false
 
     var body: some View {
         Form {
@@ -28,62 +32,13 @@ struct SettingsView: View {
                         Text(provider.displayName).tag(provider)
                     }
                 }
-                .pickerStyle(.segmented)
             }
 
-            Section("OpenAI") {
-                HStack {
-                    if revealOpenAIKey {
-                        TextField("OpenAI API 密钥", text: $settings.apiKey)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    } else {
-                        SecureField("OpenAI API 密钥", text: $settings.apiKey)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    }
-                    Button { revealOpenAIKey.toggle() } label: {
-                        Image(systemName: revealOpenAIKey ? "eye.slash" : "eye")
-                    }
-                }
-
-                Picker("模型", selection: $settings.model) {
-                    Text("gpt-5.5").tag("gpt-5.5")
-                    Text("gpt-5.4").tag("gpt-5.4")
-                    Text("gpt-5.4-mini").tag("gpt-5.4-mini")
-                    Text("gpt-5.4-nano").tag("gpt-5.4-nano")
-                    Text("gpt-4.1-mini").tag("gpt-4.1-mini")
-                    Text("gpt-4.1").tag("gpt-4.1")
-                    Text("gpt-4o-mini").tag("gpt-4o-mini")
-                }
-            }
-
-            Section("DeepSeek") {
-                HStack {
-                    if revealDeepSeekKey {
-                        TextField("DeepSeek API 密钥", text: $settings.deepSeekAPIKey)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    } else {
-                        SecureField("DeepSeek API 密钥", text: $settings.deepSeekAPIKey)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    }
-                    Button { revealDeepSeekKey.toggle() } label: {
-                        Image(systemName: revealDeepSeekKey ? "eye.slash" : "eye")
-                    }
-                }
-
-                Picker("模型", selection: $settings.deepSeekModel) {
-                    Text("deepseek-v4-flash").tag("deepseek-v4-flash")
-                    Text("deepseek-v4-pro").tag("deepseek-v4-pro")
-                }
-            }
+            activeProviderSection
 
             Section("通用") {
+                Toggle("AI 失败时使用本地免费模式", isOn: $settings.fallbackToLocal)
                 Toggle("自动复制结果", isOn: $settings.autoCopy)
-                Link("OpenAI API 文档", destination: URL(string: "https://platform.openai.com/docs")!)
-                Link("DeepSeek API 文档", destination: URL(string: "https://api-docs.deepseek.com")!)
             }
 
             Section("后续计划") {
@@ -93,5 +48,136 @@ struct SettingsView: View {
             }
         }
         .navigationTitle("设置")
+    }
+
+    @ViewBuilder
+    private var activeProviderSection: some View {
+        Section(settings.provider.displayName) {
+            if settings.provider == .local {
+                Label("不需要 API 密钥，使用 OCR 文本生成基础本地总结", systemImage: "checkmark.shield")
+            } else {
+                if settings.provider == .custom {
+                    TextField("接口地址，例如 https://example.com/v1/chat/completions", text: $settings.customBaseURL)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                        .keyboardType(.URL)
+                }
+
+                apiKeyField(
+                    title: "\(settings.provider.displayName) API 密钥",
+                    text: apiKeyBinding(for: settings.provider),
+                    reveal: revealBinding(for: settings.provider)
+                )
+
+                if settings.provider == .custom {
+                    TextField("模型名称", text: $settings.customModel)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled()
+                } else {
+                    Picker("模型", selection: modelBinding(for: settings.provider)) {
+                        ForEach(settings.provider.modelOptions, id: \.self) { model in
+                            Text(model).tag(model)
+                        }
+                    }
+                }
+
+                if let url = docsURL(for: settings.provider) {
+                    Link("\(settings.provider.displayName) API 文档", destination: url)
+                }
+            }
+        }
+    }
+
+    private func apiKeyField(title: String, text: Binding<String>, reveal: Binding<Bool>) -> some View {
+        HStack {
+            if reveal.wrappedValue {
+                TextField(title, text: text)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            } else {
+                SecureField(title, text: text)
+                    .textInputAutocapitalization(.never)
+                    .autocorrectionDisabled()
+            }
+            Button { reveal.wrappedValue.toggle() } label: {
+                Image(systemName: reveal.wrappedValue ? "eye.slash" : "eye")
+            }
+        }
+    }
+
+    private func apiKeyBinding(for provider: AIProvider) -> Binding<String> {
+        switch provider {
+        case .local:
+            return .constant("")
+        case .openAI:
+            return $settings.apiKey
+        case .deepSeek:
+            return $settings.deepSeekAPIKey
+        case .qwen:
+            return $settings.qwenAPIKey
+        case .kimi:
+            return $settings.kimiAPIKey
+        case .xiaomi:
+            return $settings.xiaomiAPIKey
+        case .custom:
+            return $settings.customAPIKey
+        }
+    }
+
+    private func modelBinding(for provider: AIProvider) -> Binding<String> {
+        switch provider {
+        case .local:
+            return .constant(AIProvider.local.defaultModel)
+        case .openAI:
+            return $settings.model
+        case .deepSeek:
+            return $settings.deepSeekModel
+        case .qwen:
+            return $settings.qwenModel
+        case .kimi:
+            return $settings.kimiModel
+        case .xiaomi:
+            return $settings.xiaomiModel
+        case .custom:
+            return $settings.customModel
+        }
+    }
+
+    private func revealBinding(for provider: AIProvider) -> Binding<Bool> {
+        switch provider {
+        case .local:
+            return .constant(false)
+        case .openAI:
+            return $revealOpenAIKey
+        case .deepSeek:
+            return $revealDeepSeekKey
+        case .qwen:
+            return $revealQwenKey
+        case .kimi:
+            return $revealKimiKey
+        case .xiaomi:
+            return $revealXiaomiKey
+        case .custom:
+            return $revealCustomKey
+        }
+    }
+
+    private func docsURL(for provider: AIProvider) -> URL? {
+        switch provider {
+        case .local:
+            return nil
+        case .openAI:
+            return URL(string: "https://platform.openai.com/docs")
+        case .deepSeek:
+            return URL(string: "https://api-docs.deepseek.com")
+        case .qwen:
+            return URL(string: "https://help.aliyun.com/zh/model-studio")
+        case .kimi:
+            return URL(string: "https://platform.kimi.ai/docs")
+        case .xiaomi:
+            return URL(string: "https://openrouter.ai/xiaomi")
+        case .custom:
+            return nil
+        }
     }
 }

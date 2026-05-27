@@ -32,7 +32,13 @@ final class ChatViewModel: ObservableObject {
         isStreaming = true
 
         do {
-            let service = OpenAIService(provider: settings.provider, apiKey: settings.activeAPIKey, model: settings.activeModel)
+            let service = OpenAIService(
+                provider: settings.provider,
+                apiKey: settings.activeAPIKey,
+                model: settings.activeModel,
+                baseURL: settings.activeBaseURL,
+                fallbackToLocal: settings.fallbackToLocal
+            )
             let contextMessages = Array(messages.dropLast())
             for try await delta in service.streamChat(ocrText: ocrText, summary: summary, messages: contextMessages) {
                 try Task.checkCancellation()

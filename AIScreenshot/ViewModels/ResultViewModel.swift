@@ -47,7 +47,13 @@ final class ResultViewModel: ObservableObject {
 
             step = .summary
             isStreamingSummary = true
-            let service = OpenAIService(provider: settings.provider, apiKey: settings.activeAPIKey, model: settings.activeModel)
+            let service = OpenAIService(
+                provider: settings.provider,
+                apiKey: settings.activeAPIKey,
+                model: settings.activeModel,
+                baseURL: settings.activeBaseURL,
+                fallbackToLocal: settings.fallbackToLocal
+            )
             for try await delta in service.streamSummary(text: text, mode: mode) {
                 try Task.checkCancellation()
                 summary += delta

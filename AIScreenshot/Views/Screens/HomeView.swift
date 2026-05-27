@@ -199,7 +199,7 @@ struct HomeView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .cardStyle()
             } else {
-                ForEach(historyStore.items.prefix(3)) { item in
+                ForEach(historyStore.items.prefix(10)) { item in
                     NavigationLink { HistoryDetailView(item: item) } label: {
                         HStack {
                             recentThumbnail(for: item)
