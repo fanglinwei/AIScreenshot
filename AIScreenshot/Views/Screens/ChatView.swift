@@ -3,6 +3,7 @@ import SwiftUI
 struct ChatView: View {
     let image: UIImage?
     let resultID: UUID?
+    let screenshotType: ScreenshotType
     let ocrText: String
     let summary: String
 
@@ -102,9 +103,9 @@ struct ChatView: View {
 
     private var contextPreview: String {
         if !summary.isEmpty {
-            return summary
+            return "截图类型：\(screenshotType.displayName)\n\n\(summary)"
         }
-        return "暂无 AI 总结，仍可基于识别文本追问。"
+        return "截图类型：\(screenshotType.displayName)\n\n暂无 AI 总结，仍可基于识别文本追问。"
     }
 
     private var contextFullText: String {
@@ -138,10 +139,10 @@ struct ChatView: View {
         VStack(alignment: .leading, spacing: 12) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    ForEach(viewModel.suggestions, id: \.self) { suggestion in
+                    ForEach(viewModel.suggestions(for: screenshotType), id: \.self) { suggestion in
                         SuggestionChip(title: suggestion) {
                             Task {
-                                await viewModel.send(suggestion, ocrText: ocrText, summary: summary, settings: settings, resultID: resultID, chatStore: chatStore)
+                                await viewModel.send(suggestion, screenshotType: screenshotType, ocrText: ocrText, summary: summary, settings: settings, resultID: resultID, chatStore: chatStore)
                             }
                         }
                         .disabled(viewModel.isStreaming)
@@ -168,7 +169,7 @@ struct ChatView: View {
 
                 Button {
                     Task {
-                        await viewModel.send(ocrText: ocrText, summary: summary, settings: settings, resultID: resultID, chatStore: chatStore)
+                        await viewModel.send(screenshotType: screenshotType, ocrText: ocrText, summary: summary, settings: settings, resultID: resultID, chatStore: chatStore)
                     }
                 } label: {
                     Image(systemName: viewModel.isStreaming ? "hourglass" : "paperplane.fill")

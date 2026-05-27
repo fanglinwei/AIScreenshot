@@ -20,6 +20,35 @@ final class ResultViewModel: ObservableObject {
     @Published var copied = false
     @Published var isStreamingSummary = false
     @Published var savedResultID: UUID?
+    @Published var screenshotType: ScreenshotType = .unknown
+    @Published var insight = ResultInsight()
+
+    var shareText: String {
+        """
+        识别文本：
+        \(ocrText)
+
+        AI 总结：
+        \(summary)
+        """
+    }
+
+    var currentMemoryRecord: OCRResult? {
+        guard !ocrText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ||
+              !summary.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
+            return nil
+        }
+
+        return OCRResult(
+            id: savedResultID ?? UUID(),
+            title: makeTitle(from: ocrText),
+            ocrText: ocrText,
+            summary: summary,
+            mode: .summary,
+            screenshotType: screenshotType,
+            tags: ScreenshotMemorySearch.tags(for: screenshotType, ocrText: ocrText, summary: summary)
+        )
+    }
 
     func process(image: UIImage, mode: SummaryMode, settings: AppSettings, historyStore: HistoryStore) async {
         do {
@@ -27,18 +56,29 @@ final class ResultViewModel: ObservableObject {
             summary = ""
             ocrText = ""
             savedResultID = nil
+            screenshotType = .unknown
+            insight = ResultInsight()
             isStreamingSummary = false
 
             step = .ocr
             let text = try await OCRService.recognizeText(from: image)
             ocrText = text
+            screenshotType = ScreenshotClassifier.classify(ocrText: text)
 
             guard !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
                 summary = "未识别到可总结的文字。"
+                insight = ResultInsight(markdown: summary)
                 step = .done
-                let result = OCRResult(title: makeTitle(from: text), ocrText: text, summary: summary, mode: mode)
-                historyStore.add(result, image: image)
-                savedResultID = result.id
+                let result = OCRResult(
+                    title: makeTitle(from: text),
+                    ocrText: text,
+                    summary: summary,
+                    mode: mode,
+                    screenshotType: screenshotType,
+                    tags: ScreenshotMemorySearch.tags(for: screenshotType, ocrText: text, summary: summary)
+                )
+                let savedResult = historyStore.add(result, image: image)
+                savedResultID = savedResult.id
                 return
             }
 
@@ -54,17 +94,25 @@ final class ResultViewModel: ObservableObject {
                 baseURL: settings.activeBaseURL,
                 fallbackToLocal: settings.fallbackToLocal
             )
-            for try await delta in service.streamSummary(text: text, mode: mode) {
+            for try await delta in service.streamSummary(text: text, mode: mode, screenshotType: screenshotType) {
                 try Task.checkCancellation()
                 summary += delta
+                insight = ResultInsight(markdown: summary)
             }
             isStreamingSummary = false
 
             step = .done
             let title = makeTitle(from: text)
-            let result = OCRResult(title: title, ocrText: text, summary: summary, mode: mode)
-            historyStore.add(result, image: image)
-            savedResultID = result.id
+            let result = OCRResult(
+                title: title,
+                ocrText: text,
+                summary: summary,
+                mode: mode,
+                screenshotType: screenshotType,
+                tags: ScreenshotMemorySearch.tags(for: screenshotType, ocrText: text, summary: summary)
+            )
+            let savedResult = historyStore.add(result, image: image)
+            savedResultID = savedResult.id
             if settings.autoCopy { copyAll() }
         } catch is CancellationError {
             isStreamingSummary = false
@@ -76,13 +124,7 @@ final class ResultViewModel: ObservableObject {
     }
 
     func copyAll() {
-        UIPasteboard.general.string = """
-        识别文本：
-        \(ocrText)
-
-        AI 总结：
-        \(summary)
-        """
+        UIPasteboard.general.string = shareText
         copied = true
         Task { @MainActor in
             try? await Task.sleep(nanoseconds: 1_300_000_000)

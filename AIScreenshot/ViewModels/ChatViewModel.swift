@@ -8,8 +8,11 @@ final class ChatViewModel: ObservableObject {
     @Published var isStreaming = false
     @Published var errorMessage: String?
 
-    let suggestions = ["解释一下", "帮我翻译", "提炼重点", "整理待办", "改写成笔记"]
     private var loadedResultID: UUID?
+
+    func suggestions(for screenshotType: ScreenshotType) -> [String] {
+        ChatSuggestionProvider.suggestions(for: screenshotType)
+    }
 
     func load(resultID: UUID?, chatStore: ChatStore) {
         guard loadedResultID != resultID else { return }
@@ -18,7 +21,7 @@ final class ChatViewModel: ObservableObject {
         errorMessage = nil
     }
 
-    func send(_ text: String? = nil, ocrText: String, summary: String, settings: AppSettings, resultID: UUID?, chatStore: ChatStore) async {
+    func send(_ text: String? = nil, screenshotType: ScreenshotType, ocrText: String, summary: String, settings: AppSettings, resultID: UUID?, chatStore: ChatStore) async {
         let question = (text ?? inputText).trimmingCharacters(in: .whitespacesAndNewlines)
         guard !question.isEmpty, !isStreaming else { return }
 
@@ -40,7 +43,7 @@ final class ChatViewModel: ObservableObject {
                 fallbackToLocal: settings.fallbackToLocal
             )
             let contextMessages = Array(messages.dropLast())
-            for try await delta in service.streamChat(ocrText: ocrText, summary: summary, messages: contextMessages) {
+            for try await delta in service.streamChat(screenshotType: screenshotType, ocrText: ocrText, summary: summary, messages: contextMessages) {
                 try Task.checkCancellation()
                 messages[assistantIndex].content += delta
             }

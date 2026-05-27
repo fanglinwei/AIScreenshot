@@ -22,6 +22,7 @@ final class HistoryStore: ObservableObject {
     func add(_ result: OCRResult, image: UIImage) -> OCRResult {
         var savedResult = result
         savedResult.imageFilename = saveImage(image, id: result.id)
+        savedResult.imagePath = imagePath(for: savedResult.imageFilename)
         add(savedResult)
         return savedResult
     }
@@ -39,7 +40,8 @@ final class HistoryStore: ObservableObject {
                 title: sharedItem.title,
                 ocrText: sharedItem.ocrText,
                 summary: sharedItem.summary,
-                mode: sharedItem.mode
+                mode: sharedItem.mode,
+                screenshotType: ScreenshotClassifier.classify(ocrText: sharedItem.ocrText)
             )
 
             if let filename = sharedItem.imageFilename,
@@ -82,6 +84,14 @@ final class HistoryStore: ObservableObject {
         return UIImage(contentsOfFile: imageDirectory.appendingPathComponent(filename).path)
     }
 
+    func search(_ query: String) -> [OCRResult] {
+        ScreenshotMemorySearch.search(items, query: query)
+    }
+
+    func related(to item: OCRResult, limit: Int = 3) -> [OCRResult] {
+        ScreenshotMemorySearch.related(to: item, in: items, limit: limit)
+    }
+
     private func save() {
         guard let data = try? JSONEncoder().encode(items) else { return }
         UserDefaults.standard.set(data, forKey: key)
@@ -92,8 +102,20 @@ final class HistoryStore: ObservableObject {
     private func load() {
         guard let data = UserDefaults.standard.data(forKey: key),
               let decoded = try? JSONDecoder().decode([OCRResult].self, from: data) else { return }
-        items = decoded
-        WidgetSnapshotStore.save(items)
+        items = decoded.map { record in
+            var migrated = record
+            if migrated.screenshotType == .unknown {
+                migrated.screenshotType = ScreenshotClassifier.classify(ocrText: migrated.ocrText)
+            }
+            if migrated.tags.isEmpty {
+                migrated.tags = ScreenshotMemorySearch.tags(for: migrated.screenshotType, ocrText: migrated.ocrText, summary: migrated.summary)
+            }
+            if migrated.imagePath == nil {
+                migrated.imagePath = imagePath(for: migrated.imageFilename)
+            }
+            return migrated
+        }
+        save()
     }
 
     private var imageDirectory: URL {
@@ -114,6 +136,11 @@ final class HistoryStore: ObservableObject {
         } catch {
             return nil
         }
+    }
+
+    func imagePath(for filename: String?) -> String? {
+        guard let filename else { return nil }
+        return imageDirectory.appendingPathComponent(filename).path
     }
 
     private func removeImage(named filename: String?) {

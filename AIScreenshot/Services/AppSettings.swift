@@ -27,7 +27,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
     var defaultModel: String {
         switch self {
         case .local: return "local-free"
-        case .openAI: return "gpt-5.5"
+        case .openAI: return OpenAIConfig.defaultModel
         case .deepSeek: return "deepseek-v4-flash"
         case .qwen: return "qwen-plus"
         case .kimi: return "kimi-k2.6"
@@ -41,7 +41,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .local:
             return ["local-free"]
         case .openAI:
-            return ["gpt-5.5", "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-4.1-mini", "gpt-4.1", "gpt-4o-mini"]
+            return [OpenAIConfig.defaultModel, "gpt-4.1", "gpt-4o-mini"]
         case .deepSeek:
             return ["deepseek-v4-flash", "deepseek-v4-pro"]
         case .qwen:
@@ -60,7 +60,7 @@ enum AIProvider: String, CaseIterable, Identifiable {
         case .local:
             return ""
         case .openAI:
-            return "https://api.openai.com/v1/responses"
+            return OpenAIConfig.responsesURL.absoluteString
         case .deepSeek:
             return "https://api.deepseek.com/chat/completions"
         case .qwen:
@@ -85,7 +85,7 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(provider.rawValue, forKey: "ai_provider") }
     }
     @Published var apiKey: String {
-        didSet { UserDefaults.standard.set(apiKey, forKey: "openai_api_key") }
+        didSet { saveShared(apiKey, forKey: "openai_api_key") }
     }
     @Published var deepSeekAPIKey: String {
         didSet { UserDefaults.standard.set(deepSeekAPIKey, forKey: "deepseek_api_key") }
@@ -106,7 +106,7 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(customBaseURL, forKey: "custom_base_url") }
     }
     @Published var model: String {
-        didSet { UserDefaults.standard.set(model, forKey: "openai_model") }
+        didSet { saveShared(model, forKey: "openai_model") }
     }
     @Published var deepSeekModel: String {
         didSet { UserDefaults.standard.set(deepSeekModel, forKey: "deepseek_model") }
@@ -124,7 +124,7 @@ final class AppSettings: ObservableObject {
         didSet { UserDefaults.standard.set(customModel, forKey: "custom_model") }
     }
     @Published var fallbackToLocal: Bool {
-        didSet { UserDefaults.standard.set(fallbackToLocal, forKey: "fallback_to_local") }
+        didSet { saveShared(fallbackToLocal, forKey: "fallback_to_local") }
     }
     @Published var autoCopy: Bool {
         didSet { UserDefaults.standard.set(autoCopy, forKey: "auto_copy") }
@@ -173,11 +173,10 @@ final class AppSettings: ObservableObject {
         self.customAPIKey = UserDefaults.standard.string(forKey: "custom_api_key") ?? ""
         self.customBaseURL = UserDefaults.standard.string(forKey: "custom_base_url") ?? ""
         let savedOpenAIModel = UserDefaults.standard.string(forKey: "openai_model")
-        switch savedOpenAIModel {
-        case "gpt-4.1-mini", nil:
+        if let savedOpenAIModel, AIProvider.openAI.modelOptions.contains(savedOpenAIModel) {
+            self.model = savedOpenAIModel
+        } else {
             self.model = AIProvider.openAI.defaultModel
-        default:
-            self.model = savedOpenAIModel ?? AIProvider.openAI.defaultModel
         }
         let savedDeepSeekModel = UserDefaults.standard.string(forKey: "deepseek_model")
         switch savedDeepSeekModel {
@@ -192,5 +191,18 @@ final class AppSettings: ObservableObject {
         self.customModel = UserDefaults.standard.string(forKey: "custom_model") ?? ""
         self.fallbackToLocal = UserDefaults.standard.object(forKey: "fallback_to_local") as? Bool ?? true
         self.autoCopy = UserDefaults.standard.object(forKey: "auto_copy") as? Bool ?? false
+        syncOpenAISettingsToAppGroup()
+    }
+
+    private func saveShared(_ value: Any, forKey key: String) {
+        UserDefaults.standard.set(value, forKey: key)
+        UserDefaults(suiteName: SharedImportStore.appGroupID)?.set(value, forKey: key)
+    }
+
+    private func syncOpenAISettingsToAppGroup() {
+        let sharedDefaults = UserDefaults(suiteName: SharedImportStore.appGroupID)
+        sharedDefaults?.set(apiKey, forKey: "openai_api_key")
+        sharedDefaults?.set(model, forKey: "openai_model")
+        sharedDefaults?.set(fallbackToLocal, forKey: "fallback_to_local")
     }
 }

@@ -7,50 +7,49 @@ struct OpenAIService {
     let baseURL: String
     let fallbackToLocal: Bool
 
-    func summarize(text: String, mode: SummaryMode) async throws -> String {
+    func summarize(text: String, mode: SummaryMode, screenshotType: ScreenshotType = .unknown) async throws -> String {
         var result = ""
-        for try await delta in streamSummary(text: text, mode: mode) {
+        for try await delta in streamSummary(text: text, mode: mode, screenshotType: screenshotType) {
             result += delta
         }
         return result.isEmpty ? "AI 没有返回可用总结。" : result
     }
 
-    func streamSummary(text: String, mode: SummaryMode) -> AsyncThrowingStream<String, Error> {
+    func streamSummary(text: String, mode: SummaryMode, screenshotType: ScreenshotType = .unknown) -> AsyncThrowingStream<String, Error> {
         guard provider != .local, !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return Self.localFallbackSummaryStream(text: text, mode: mode, provider: provider)
         }
 
         switch provider {
         case .openAI:
-            return streamOpenAI(text: text, mode: mode)
+            return streamOpenAI(text: text, mode: mode, screenshotType: screenshotType)
         case .local:
             return Self.localFallbackSummaryStream(text: text, mode: mode, provider: provider)
         case .deepSeek, .qwen, .kimi, .xiaomi, .custom:
-            return streamChatCompletions(text: text, mode: mode)
+            return streamChatCompletions(text: text, mode: mode, screenshotType: screenshotType)
         }
     }
 
-    func streamChat(ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
+    func streamChat(screenshotType: ScreenshotType, ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
         guard provider != .local, !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
             return Self.localFallbackChatStream(messages: messages, provider: provider)
         }
 
         switch provider {
         case .openAI:
-            return streamOpenAIChat(ocrText: ocrText, summary: summary, messages: messages)
+            return streamOpenAIChat(screenshotType: screenshotType, ocrText: ocrText, summary: summary, messages: messages)
         case .local:
             return Self.localFallbackChatStream(messages: messages, provider: provider)
         case .deepSeek, .qwen, .kimi, .xiaomi, .custom:
-            return streamChatCompletionsChat(ocrText: ocrText, summary: summary, messages: messages)
+            return streamChatCompletionsChat(screenshotType: screenshotType, ocrText: ocrText, summary: summary, messages: messages)
         }
     }
 
-    private func streamOpenAI(text: String, mode: SummaryMode) -> AsyncThrowingStream<String, Error> {
+    private func streamOpenAI(text: String, mode: SummaryMode, screenshotType: ScreenshotType) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let url = URL(string: "https://api.openai.com/v1/responses")!
-                    var request = URLRequest(url: url)
+                    var request = URLRequest(url: OpenAIConfig.responsesURL)
                     request.httpMethod = "POST"
                     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
@@ -60,7 +59,7 @@ struct OpenAIService {
                         "stream": true,
                         "input": [
                             ["role": "system", "content": PromptService.summarySystemPrompt(for: mode)],
-                            ["role": "user", "content": PromptService.summaryUserPrompt(ocrText: text)]
+                            ["role": "user", "content": PromptRouter.prompt(for: screenshotType, ocrText: text)]
                         ]
                     ]
 
@@ -75,7 +74,7 @@ struct OpenAIService {
         }
     }
 
-    private func streamChatCompletions(text: String, mode: SummaryMode) -> AsyncThrowingStream<String, Error> {
+    private func streamChatCompletions(text: String, mode: SummaryMode, screenshotType: ScreenshotType) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
@@ -91,7 +90,7 @@ struct OpenAIService {
                         "model": model,
                         "messages": [
                             ["role": "system", "content": PromptService.summarySystemPrompt(for: mode)],
-                            ["role": "user", "content": PromptService.summaryUserPrompt(ocrText: text)]
+                            ["role": "user", "content": PromptRouter.prompt(for: screenshotType, ocrText: text)]
                         ],
                         "stream": true
                     ]
@@ -107,17 +106,16 @@ struct OpenAIService {
         }
     }
 
-    private func streamOpenAIChat(ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
+    private func streamOpenAIChat(screenshotType: ScreenshotType, ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
-                    let url = URL(string: "https://api.openai.com/v1/responses")!
-                    var request = URLRequest(url: url)
+                    var request = URLRequest(url: OpenAIConfig.responsesURL)
                     request.httpMethod = "POST"
                     request.setValue("Bearer \(apiKey)", forHTTPHeaderField: "Authorization")
                     request.setValue("application/json", forHTTPHeaderField: "Content-Type")
 
-                    let input = chatPayloadMessages(ocrText: ocrText, summary: summary, messages: messages)
+                    let input = chatPayloadMessages(screenshotType: screenshotType, ocrText: ocrText, summary: summary, messages: messages)
                     let payload: [String: Any] = [
                         "model": model,
                         "stream": true,
@@ -135,7 +133,7 @@ struct OpenAIService {
         }
     }
 
-    private func streamChatCompletionsChat(ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
+    private func streamChatCompletionsChat(screenshotType: ScreenshotType, ocrText: String, summary: String, messages: [ChatMessage]) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
@@ -149,7 +147,7 @@ struct OpenAIService {
 
                     let payload: [String: Any] = [
                         "model": model,
-                        "messages": chatPayloadMessages(ocrText: ocrText, summary: summary, messages: messages),
+                        "messages": chatPayloadMessages(screenshotType: screenshotType, ocrText: ocrText, summary: summary, messages: messages),
                         "stream": true
                     ]
 
@@ -164,10 +162,10 @@ struct OpenAIService {
         }
     }
 
-    private func chatPayloadMessages(ocrText: String, summary: String, messages: [ChatMessage]) -> [[String: String]] {
+    private func chatPayloadMessages(screenshotType: ScreenshotType, ocrText: String, summary: String, messages: [ChatMessage]) -> [[String: String]] {
         var payload = [
             ["role": "system", "content": PromptService.chatSystemPrompt()],
-            ["role": "user", "content": PromptService.chatContextPrompt(ocrText: ocrText, summary: summary)]
+            ["role": "user", "content": PromptService.chatContextPrompt(screenshotType: screenshotType, ocrText: ocrText, summary: summary)]
         ]
 
         payload.append(contentsOf: messages.suffix(12).map {
@@ -219,6 +217,35 @@ struct OpenAIService {
         provider: AIProvider,
         continuation: AsyncThrowingStream<String, Error>.Continuation
     ) async throws {
+        var attempt = 0
+
+        while true {
+            do {
+                try await streamOnce(request: request, provider: provider, continuation: continuation)
+                return
+            } catch is CancellationError {
+                throw CancellationError()
+            } catch let error as APIError where error.retryable && attempt < OpenAIConfig.maxRetryCount {
+                attempt += 1
+                try await Task.sleep(nanoseconds: OpenAIConfig.retryDelayNanoseconds(forAttempt: attempt))
+            } catch let error as URLError where !Task.isCancelled {
+                let apiError = APIError.network(error)
+                guard apiError.retryable && attempt < OpenAIConfig.maxRetryCount else {
+                    throw apiError
+                }
+                attempt += 1
+                try await Task.sleep(nanoseconds: OpenAIConfig.retryDelayNanoseconds(forAttempt: attempt))
+            } catch {
+                throw error
+            }
+        }
+    }
+
+    private func streamOnce(
+        request: URLRequest,
+        provider: AIProvider,
+        continuation: AsyncThrowingStream<String, Error>.Continuation
+    ) async throws {
         let (bytes, response) = try await URLSession.shared.bytes(for: request)
 
         guard let http = response as? HTTPURLResponse else {
@@ -226,17 +253,48 @@ struct OpenAIService {
         }
 
         guard (200..<300).contains(http.statusCode) else {
-            throw APIError.badResponse(statusMessage(for: http.statusCode))
+            let message = await errorMessage(from: bytes) ?? statusMessage(for: http.statusCode)
+            throw APIError.from(statusCode: http.statusCode, message: message)
         }
 
-        for try await line in bytes.lines {
-            try Task.checkCancellation()
-            if let delta = try SSEParser.textDelta(from: line, provider: provider), !delta.isEmpty {
-                continuation.yield(delta)
+        do {
+            for try await line in bytes.lines {
+                try Task.checkCancellation()
+                if let delta = try SSEParser.textDelta(from: line, provider: provider), !delta.isEmpty {
+                    continuation.yield(delta)
+                }
             }
+        } catch let error as URLError {
+            throw APIError.network(error)
         }
 
         continuation.finish()
+    }
+
+    private func errorMessage(from bytes: URLSession.AsyncBytes) async -> String? {
+        do {
+            var lines: [String] = []
+            for try await line in bytes.lines {
+                lines.append(line)
+                if lines.count >= 16 { break }
+            }
+
+            let body = lines.joined(separator: "\n")
+            guard !body.isEmpty else { return nil }
+            let data = Data(body.utf8)
+            guard let object = try JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+                return body
+            }
+
+            if let error = object["error"] as? [String: Any],
+               let message = error["message"] as? String {
+                return message
+            }
+
+            return object["message"] as? String ?? body
+        } catch {
+            return nil
+        }
     }
 
     static func localFallbackSummary(text: String, mode: SummaryMode, provider: AIProvider) -> String {
@@ -304,10 +362,65 @@ struct OpenAIService {
         }
     }
 
-    enum APIError: LocalizedError {
+    enum APIError: LocalizedError, Equatable {
+        case network(URLError)
+        case rateLimit
+        case tokenLimit
+        case server(statusCode: Int, message: String)
+        case unauthorized
         case badResponse(String)
+
+        var retryable: Bool {
+            switch self {
+            case .network, .rateLimit, .server:
+                return true
+            case .tokenLimit, .unauthorized, .badResponse:
+                return false
+            }
+        }
+
+        static func from(statusCode: Int, message: String) -> APIError {
+            switch statusCode {
+            case 401, 403:
+                return .unauthorized
+            case 408, 429:
+                return .rateLimit
+            case 400 where isTokenLimitMessage(message),
+                 413 where isTokenLimitMessage(message):
+                return .tokenLimit
+            case 500..<600:
+                return .server(statusCode: statusCode, message: message)
+            default:
+                if isTokenLimitMessage(message) {
+                    return .tokenLimit
+                }
+                return .badResponse(message)
+            }
+        }
+
         var errorDescription: String? {
-            switch self { case .badResponse(let message): return message }
+            switch self {
+            case .network:
+                return "网络连接失败，请检查网络后重试。"
+            case .rateLimit:
+                return "请求过于频繁，请稍后再试。"
+            case .tokenLimit:
+                return "截图内容过长，超过模型可处理的 token 限制。请裁剪截图或减少文本后重试。"
+            case .server:
+                return "AI 服务暂时不可用，请稍后重试。"
+            case .unauthorized:
+                return "API 密钥无效，请在设置中检查后重试。"
+            case .badResponse(let message):
+                return message
+            }
+        }
+
+        private static func isTokenLimitMessage(_ message: String) -> Bool {
+            let lowercased = message.lowercased()
+            return lowercased.contains("token") ||
+            lowercased.contains("context length") ||
+            lowercased.contains("maximum context") ||
+            lowercased.contains("too long")
         }
     }
 }

@@ -13,9 +13,10 @@ struct StreamingSummaryText: View {
         VStack(alignment: .leading, spacing: 12) {
             if text.isEmpty, isStreaming {
                 ThinkingIndicator()
+                SkeletonLoadingView()
+            } else {
+                AIContentText(text: displayText)
             }
-
-            AIContentText(text: displayText)
 
             if isStreaming, !text.isEmpty {
                 HStack {

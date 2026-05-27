@@ -15,6 +15,26 @@ struct HistoryDetailView: View {
                     }
                 }
 
+                HStack {
+                    Label(item.screenshotType.displayName, systemImage: item.screenshotType.systemImage)
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(DS.ColorToken.primary)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 7)
+                        .background(DS.ColorToken.primary.opacity(0.10))
+                        .clipShape(Capsule())
+                    Spacer()
+                }
+
+                if !item.tags.isEmpty {
+                    SectionCard(title: "标签", systemImage: "tag.fill") {
+                        Text(item.tags.map { "#\($0)" }.joined(separator: " "))
+                            .font(.subheadline)
+                            .foregroundStyle(DS.ColorToken.textSecondary)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                }
+
                 SectionCard(
                     title: "AI 总结",
                     systemImage: "sparkles",
@@ -39,7 +59,7 @@ struct HistoryDetailView: View {
                 }
 
                 NavigationLink {
-                    ChatView(image: historyStore.image(for: item), resultID: item.id, ocrText: item.ocrText, summary: item.summary)
+                    ChatView(image: historyStore.image(for: item), resultID: item.id, screenshotType: item.screenshotType, ocrText: item.ocrText, summary: item.summary)
                 } label: {
                     HStack(spacing: 10) {
                         Image(systemName: "message.fill")

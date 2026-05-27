@@ -12,8 +12,11 @@ final class ShareViewController: UIViewController {
             onCancel: { [weak self] in
                 self?.extensionContext?.cancelRequest(withError: CancellationError())
             },
-            onSaveAndOpen: { [weak self] in
-                self?.saveAndOpenApp()
+            onSave: { [weak self] in
+                self?.viewModel.save()
+            },
+            onOpenApp: { [weak self] in
+                self?.openApp()
             }
         )
 
@@ -34,8 +37,7 @@ final class ShareViewController: UIViewController {
         }
     }
 
-    private func saveAndOpenApp() {
-        viewModel.save()
+    private func openApp() {
         extensionContext?.open(ShareImportStore.importedURL) { [weak self] _ in
             self?.extensionContext?.completeRequest(returningItems: nil)
         }

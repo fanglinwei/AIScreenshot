@@ -32,8 +32,11 @@ struct PromptService {
         """
     }
 
-    static func chatContextPrompt(ocrText: String, summary: String) -> String {
+    static func chatContextPrompt(screenshotType: ScreenshotType, ocrText: String, summary: String) -> String {
         """
+        截图类型：
+        \(screenshotType.displayName)
+
         截图 OCR：
         \(trimOCRText(ocrText, maxCharacters: 8_000))
 

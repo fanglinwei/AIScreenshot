@@ -3,7 +3,8 @@ import SwiftUI
 struct ShareExtensionView: View {
     @ObservedObject var viewModel: ShareExtensionViewModel
     let onCancel: () -> Void
-    let onSaveAndOpen: () -> Void
+    let onSave: () -> Void
+    let onOpenApp: () -> Void
 
     var body: some View {
         NavigationStack {
@@ -11,7 +12,16 @@ struct ShareExtensionView: View {
                 preview
                 summaryCard
                 Spacer(minLength: 0)
-                actionButton
+                SaveButton(
+                    title: viewModel.state == .saved ? "已保存" : "保存",
+                    isEnabled: viewModel.canSave,
+                    isLoading: viewModel.state == .recognizing,
+                    action: onSave
+                )
+                OpenAppButton(
+                    isEnabled: viewModel.state == .saved,
+                    action: onOpenApp
+                )
             }
             .padding(18)
             .background(Color(.systemGroupedBackground))
@@ -54,6 +64,15 @@ struct ShareExtensionView: View {
                 .font(.subheadline)
                 .foregroundStyle(.secondary)
 
+            if !viewModel.summary.isEmpty {
+                Divider()
+                Text(viewModel.summary)
+                    .font(.subheadline)
+                    .foregroundStyle(.primary)
+                    .lineLimit(8)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             if !viewModel.ocrText.isEmpty {
                 Divider()
                 Text(viewModel.ocrText)
@@ -68,25 +87,51 @@ struct ShareExtensionView: View {
         .background(Color(.secondarySystemGroupedBackground))
         .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
     }
+}
 
-    private var actionButton: some View {
-        Button(action: onSaveAndOpen) {
-            HStack(spacing: 10) {
-                if case .recognizing = viewModel.state {
+struct SaveButton: View {
+    let title: String
+    let isEnabled: Bool
+    let isLoading: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label {
+                Text(title)
+                    .fontWeight(.semibold)
+            } icon: {
+                if isLoading {
                     ProgressView()
                         .tint(.white)
                 } else {
-                    Image(systemName: "arrow.up.forward.app.fill")
+                    Image(systemName: "square.and.arrow.down.fill")
                 }
-                Text("保存并打开 App")
-                    .fontWeight(.semibold)
             }
             .frame(maxWidth: .infinity)
             .frame(height: 50)
             .foregroundStyle(.white)
-            .background(viewModel.canSave ? Color.accentColor : Color.gray)
+            .background(isEnabled ? Color.accentColor : Color.gray)
             .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
         }
-        .disabled(!viewModel.canSave)
+        .disabled(!isEnabled)
+    }
+}
+
+struct OpenAppButton: View {
+    let isEnabled: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Label("打开 App", systemImage: "arrow.up.forward.app.fill")
+                .fontWeight(.semibold)
+                .frame(maxWidth: .infinity)
+                .frame(height: 50)
+                .foregroundStyle(isEnabled ? Color.accentColor : Color.gray)
+                .background(Color(.secondarySystemGroupedBackground))
+                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .disabled(!isEnabled)
     }
 }

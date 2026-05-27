@@ -15,6 +15,7 @@ final class ShareExtensionViewModel: ObservableObject {
 
     @Published var image: UIImage?
     @Published var ocrText = ""
+    @Published var summary = ""
     @Published var state: State = .loading
 
     var statusText: String {
@@ -24,7 +25,7 @@ final class ShareExtensionViewModel: ObservableObject {
         case .recognizing:
             return "正在识别截图文字..."
         case .ready:
-            return ocrText.isEmpty ? "未识别到文字，仍可保存截图。" : "已识别文字，可保存到 App。"
+            return "已生成总结，可保存到 App。"
         case .saved:
             return "已保存，正在打开 App..."
         case .failed(let message):
@@ -53,6 +54,7 @@ final class ShareExtensionViewModel: ObservableObject {
             self.image = image
             state = .recognizing
             ocrText = try await ShareOCRService.recognizeText(from: image)
+            summary = try await ShareAIService(settings: .current).summarize(ocrText: ocrText)
             state = .ready
         } catch {
             state = .failed(error.localizedDescription)
@@ -63,7 +65,7 @@ final class ShareExtensionViewModel: ObservableObject {
         guard let image else { return }
 
         do {
-            _ = try ShareImportStore.save(image: image, ocrText: ocrText)
+            _ = try ShareImportStore.save(image: image, ocrText: ocrText, summary: summary)
             state = .saved
         } catch {
             state = .failed(error.localizedDescription)

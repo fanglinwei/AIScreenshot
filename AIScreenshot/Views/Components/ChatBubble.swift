@@ -12,7 +12,7 @@ struct ChatBubble: View {
 
             VStack(alignment: .leading, spacing: 8) {
                 if !isUser {
-                    Label("AI", systemImage: "sparkles")
+                    Label("AI 助手", systemImage: "sparkles")
                         .font(.caption.weight(.bold))
                         .foregroundStyle(DS.ColorToken.primary)
                 }

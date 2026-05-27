@@ -6,12 +6,7 @@ struct HistoryView: View {
     @State private var query = ""
 
     private var filtered: [OCRResult] {
-        guard !query.isEmpty else { return historyStore.items }
-        return historyStore.items.filter {
-            $0.title.localizedCaseInsensitiveContains(query) ||
-            $0.ocrText.localizedCaseInsensitiveContains(query) ||
-            $0.summary.localizedCaseInsensitiveContains(query)
-        }
+        historyStore.search(query)
     }
 
     var body: some View {
@@ -25,9 +20,15 @@ struct HistoryView: View {
                             HStack {
                                 Text(item.title).font(.headline).lineLimit(1)
                                 Spacer()
-                                Text(item.mode.rawValue).font(.caption2).foregroundStyle(DS.ColorToken.primary)
+                                Text(item.screenshotType.displayName).font(.caption2).foregroundStyle(DS.ColorToken.primary)
                             }
                             Text(item.summary).font(.caption).foregroundStyle(.secondary).lineLimit(2)
+                            if !item.tags.isEmpty {
+                                Text(item.tags.prefix(4).map { "#\($0)" }.joined(separator: " "))
+                                    .font(.caption2)
+                                    .foregroundStyle(DS.ColorToken.textSecondary)
+                                    .lineLimit(1)
+                            }
                             Text(item.createdAt, style: .date).font(.caption2).foregroundStyle(.secondary)
                         }
                     }
@@ -36,7 +37,7 @@ struct HistoryView: View {
             }
             .onDelete(perform: delete)
         }
-        .searchable(text: $query, prompt: "搜索识别文本或总结")
+        .searchable(text: $query, prompt: "搜索 OCR、总结、类型或标签")
         .navigationTitle("历史记录")
         .toolbar {
             if !historyStore.items.isEmpty {
