@@ -7,26 +7,36 @@ struct OpenAIService {
     let baseURL: String
     let fallbackToLocal: Bool
 
-    func summarize(text: String, mode: SummaryMode, screenshotType: ScreenshotType = .unknown) async throws -> String {
+    func summarize(
+        text: String,
+        mode: SummaryMode,
+        screenshotType: ScreenshotType = .unknown,
+        intelligenceContext: ScreenshotIntelligenceContext = .empty
+    ) async throws -> String {
         var result = ""
-        for try await delta in streamSummary(text: text, mode: mode, screenshotType: screenshotType) {
+        for try await delta in streamSummary(text: text, mode: mode, screenshotType: screenshotType, intelligenceContext: intelligenceContext) {
             result += delta
         }
         return result.isEmpty ? "AI 没有返回可用总结。" : result
     }
 
-    func streamSummary(text: String, mode: SummaryMode, screenshotType: ScreenshotType = .unknown) -> AsyncThrowingStream<String, Error> {
+    func streamSummary(
+        text: String,
+        mode: SummaryMode,
+        screenshotType: ScreenshotType = .unknown,
+        intelligenceContext: ScreenshotIntelligenceContext = .empty
+    ) -> AsyncThrowingStream<String, Error> {
         guard provider != .local, !apiKey.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty else {
-            return Self.localFallbackSummaryStream(text: text, mode: mode, provider: provider)
+            return Self.localFallbackSummaryStream(text: text, mode: mode, provider: provider, screenshotType: screenshotType, intelligenceContext: intelligenceContext)
         }
 
         switch provider {
         case .openAI:
-            return streamOpenAI(text: text, mode: mode, screenshotType: screenshotType)
+            return streamOpenAI(text: text, mode: mode, screenshotType: screenshotType, intelligenceContext: intelligenceContext)
         case .local:
-            return Self.localFallbackSummaryStream(text: text, mode: mode, provider: provider)
+            return Self.localFallbackSummaryStream(text: text, mode: mode, provider: provider, screenshotType: screenshotType, intelligenceContext: intelligenceContext)
         case .deepSeek, .qwen, .kimi, .xiaomi, .custom:
-            return streamChatCompletions(text: text, mode: mode, screenshotType: screenshotType)
+            return streamChatCompletions(text: text, mode: mode, screenshotType: screenshotType, intelligenceContext: intelligenceContext)
         }
     }
 
@@ -45,7 +55,12 @@ struct OpenAIService {
         }
     }
 
-    private func streamOpenAI(text: String, mode: SummaryMode, screenshotType: ScreenshotType) -> AsyncThrowingStream<String, Error> {
+    private func streamOpenAI(
+        text: String,
+        mode: SummaryMode,
+        screenshotType: ScreenshotType,
+        intelligenceContext: ScreenshotIntelligenceContext
+    ) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
@@ -59,7 +74,7 @@ struct OpenAIService {
                         "stream": true,
                         "input": [
                             ["role": "system", "content": PromptService.summarySystemPrompt(for: mode)],
-                            ["role": "user", "content": PromptRouter.prompt(for: screenshotType, ocrText: text)]
+                            ["role": "user", "content": PromptRouter.prompt(for: screenshotType, ocrText: text, intelligenceContext: intelligenceContext)]
                         ]
                     ]
 
@@ -74,7 +89,12 @@ struct OpenAIService {
         }
     }
 
-    private func streamChatCompletions(text: String, mode: SummaryMode, screenshotType: ScreenshotType) -> AsyncThrowingStream<String, Error> {
+    private func streamChatCompletions(
+        text: String,
+        mode: SummaryMode,
+        screenshotType: ScreenshotType,
+        intelligenceContext: ScreenshotIntelligenceContext
+    ) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
                 do {
@@ -90,7 +110,7 @@ struct OpenAIService {
                         "model": model,
                         "messages": [
                             ["role": "system", "content": PromptService.summarySystemPrompt(for: mode)],
-                            ["role": "user", "content": PromptRouter.prompt(for: screenshotType, ocrText: text)]
+                            ["role": "user", "content": PromptRouter.prompt(for: screenshotType, ocrText: text, intelligenceContext: intelligenceContext)]
                         ],
                         "stream": true
                     ]
@@ -186,7 +206,14 @@ struct OpenAIService {
             return
         }
 
-        let summary = Self.localFallbackSummary(text: text, mode: mode, provider: provider)
+        let fallbackType = ScreenshotClassifier.classify(ocrText: text)
+        let summary = Self.localFallbackSummary(
+            text: text,
+            mode: mode,
+            provider: provider,
+            screenshotType: fallbackType,
+            intelligenceContext: ScreenshotIntelligenceService.context(for: fallbackType, ocrText: text)
+        )
         continuation.yield("\n\n\(summary)")
         continuation.finish()
     }
@@ -297,21 +324,59 @@ struct OpenAIService {
         }
     }
 
-    static func localFallbackSummary(text: String, mode: SummaryMode, provider: AIProvider) -> String {
+    static func localFallbackSummary(
+        text: String,
+        mode: SummaryMode,
+        provider: AIProvider,
+        screenshotType: ScreenshotType = .unknown,
+        intelligenceContext: ScreenshotIntelligenceContext = .empty
+    ) -> String {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return "未识别到可总结的文字。" }
         let preview = String(trimmed.prefix(120))
         return """
-        • 已识别截图中的主要文字内容。
-        • 重点内容开头：\(preview)\(trimmed.count > 120 ? "..." : "")
-        • 当前未配置 \(provider.displayName) API 密钥，因此使用本地占位总结。
+        \(ResultInsight.Section.summary.markdownHeading)
+        已识别这是一张\(screenshotType.displayName)截图，当前使用本地模式生成基础理解。
+
+        \(ResultInsight.Section.intent.markdownHeading)
+        \(intelligenceContext.suspectedIntent)
+
+        \(ResultInsight.Section.visualUnderstanding.markdownHeading)
+        \(intelligenceContext.visualUnderstanding)
+
+        \(ResultInsight.Section.keyPoints.markdownHeading)
+        - 重点内容开头：\(preview)\(trimmed.count > 120 ? "..." : "")
+
+        \(ResultInsight.Section.actions.markdownHeading)
+        - 配置 \(provider.displayName) API 密钥后可获得更完整的截图智能理解。
+
+        \(ResultInsight.Section.explanation.markdownHeading)
+        本地模式主要基于 OCR、截图类型和规则推断，无法进行深度语义推理。
+
+        \(ResultInsight.Section.risks.markdownHeading)
+        - 信息可能不完整，请结合原截图确认。
+
+        \(ResultInsight.Section.relatedQuestions.markdownHeading)
+        - 这张截图最需要我帮你解释、回复、调试还是提取待办？
         """
     }
 
-    static func localFallbackSummaryStream(text: String, mode: SummaryMode, provider: AIProvider) -> AsyncThrowingStream<String, Error> {
+    static func localFallbackSummaryStream(
+        text: String,
+        mode: SummaryMode,
+        provider: AIProvider,
+        screenshotType: ScreenshotType = .unknown,
+        intelligenceContext: ScreenshotIntelligenceContext = .empty
+    ) -> AsyncThrowingStream<String, Error> {
         AsyncThrowingStream { continuation in
             let task = Task {
-                let summary = localFallbackSummary(text: text, mode: mode, provider: provider)
+                let summary = localFallbackSummary(
+                    text: text,
+                    mode: mode,
+                    provider: provider,
+                    screenshotType: screenshotType,
+                    intelligenceContext: intelligenceContext
+                )
                 for character in summary {
                     try? await Task.sleep(nanoseconds: 18_000_000)
                     guard !Task.isCancelled else { return }

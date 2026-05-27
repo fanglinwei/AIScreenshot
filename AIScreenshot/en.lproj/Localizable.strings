@@ -1,14 +1,14 @@
-"app.name" = "AI 截图助手";
-"app.subtitle" = "文字识别 + AI 总结";
+"app.name" = "AI Screenshot Assistant";
+"app.subtitle" = "OCR + AI Summary";
 
-"result.section.summary" = "总结";
-"result.section.intent" = "截图意图";
-"result.section.visualUnderstanding" = "视觉理解";
-"result.section.keyPoints" = "关键点";
-"result.section.actions" = "行动项";
-"result.section.explanation" = "解释";
-"result.section.risks" = "风险";
-"result.section.relatedQuestions" = "相关问题";
+"result.section.summary" = "Summary";
+"result.section.intent" = "Intent";
+"result.section.visualUnderstanding" = "Visual Understanding";
+"result.section.keyPoints" = "Key Points";
+"result.section.actions" = "Actions";
+"result.section.explanation" = "Explanation";
+"result.section.risks" = "Risks";
+"result.section.relatedQuestions" = "Related Questions";
 
 "result.section.summary.aliases" = "Summary|总结|摘要";
 "result.section.intent.aliases" = "Intent|Screenshot Intent|截图意图|用户意图|截图目的";

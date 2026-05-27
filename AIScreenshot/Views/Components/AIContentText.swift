@@ -145,7 +145,7 @@ private enum MarkdownAttributedTextBuilder {
             switch block {
             case let .heading(level, content):
                 result.append(inlineAttributedString(
-                    from: content,
+                    from: ResultInsight.Section.localizedTitle(matching: content) ?? content,
                     font: level == 1 ? style.headingFont : style.subheadingFont,
                     color: style.headingColor,
                     style: style

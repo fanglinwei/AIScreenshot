@@ -34,9 +34,9 @@ struct ShareAIService {
                 ["role": "system", "content": "你是 AI Screenshot Assistant。请用简洁中文总结分享进来的截图 OCR 文本。"],
                 ["role": "user", "content": """
                 请总结下面截图文字，输出 3 个部分：
-                ## Summary
-                ## Key Points
-                ## Actions
+                \(ShareSummarySection.summary.markdownHeading)
+                \(ShareSummarySection.keyPoints.markdownHeading)
+                \(ShareSummarySection.actions.markdownHeading)
 
                 OCR:
                 \(text)
@@ -94,13 +94,13 @@ struct ShareAIService {
     private func localSummary(for text: String) -> String {
         let preview = String(text.prefix(180))
         return """
-        ## Summary
+        \(ShareSummarySection.summary.markdownHeading)
         已从分享扩展导入截图，并完成本地 OCR 识别。
 
-        ## Key Points
+        \(ShareSummarySection.keyPoints.markdownHeading)
         \(preview)\(text.count > 180 ? "..." : "")
 
-        ## Actions
+        \(ShareSummarySection.actions.markdownHeading)
         打开 App 后可继续查看、复制、追问或重新生成总结。
         """
     }
@@ -128,5 +128,15 @@ enum ShareAIError: LocalizedError {
         switch self {
         case .badResponse(let message): return message
         }
+    }
+}
+
+private enum ShareSummarySection: String {
+    case summary
+    case keyPoints
+    case actions
+
+    var markdownHeading: String {
+        "## \(NSLocalizedString("result.section.\(rawValue)", comment: ""))"
     }
 }

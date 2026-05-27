@@ -54,6 +54,8 @@ struct ResultView: View {
                         insightSection(section)
                     }
 
+                    functionResultSection
+
                     relatedScreenshotsSection
 
                     PrimaryButton(title: viewModel.copied ? "已复制" : "复制全部", systemImage: viewModel.copied ? "checkmark" : "doc.on.doc", isSuccess: viewModel.copied) {
@@ -100,6 +102,9 @@ struct ResultView: View {
             }
             .onChange(of: viewModel.summary) { _, _ in
                 scheduleStreamingScroll(proxy)
+            }
+            .onChange(of: viewModel.functionOutputs) { _, _ in
+                scheduleFunctionScroll(proxy)
             }
             .onChange(of: viewModel.step) { _, step in
                 if step == .summary {
@@ -156,6 +161,18 @@ struct ResultView: View {
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: workItem)
     }
 
+    private func scheduleFunctionScroll(_ proxy: ScrollViewProxy) {
+        guard viewModel.isStreamingFunction else { return }
+
+        pendingScrollWorkItem?.cancel()
+        let workItem = DispatchWorkItem {
+            scrollToBottom(proxy, animated: true)
+            pendingScrollWorkItem = nil
+        }
+        pendingScrollWorkItem = workItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12, execute: workItem)
+    }
+
     private func scrollToBottom(_ proxy: ScrollViewProxy, animated: Bool) {
         if animated {
             withAnimation(.easeOut(duration: 0.2)) {
@@ -173,11 +190,39 @@ struct ResultView: View {
     private var functionChips: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ResultFunctionChip(title: "解释", systemImage: "lightbulb")
-                ResultFunctionChip(title: "翻译", systemImage: "character.book.closed")
-                ResultFunctionChip(title: "待办事项", systemImage: "checklist")
-                ResultFunctionChip(title: "调试", systemImage: "wrench.and.screwdriver")
-                ResultFunctionChip(title: "生成闪卡", systemImage: "rectangle.stack")
+                ForEach(ResultFunctionAction.allCases) { action in
+                    ResultFunctionChip(
+                        title: action.title,
+                        systemImage: action.systemImage,
+                        isSelected: viewModel.selectedFunction == action,
+                        isLoading: viewModel.selectedFunction == action && viewModel.isStreamingFunction
+                    ) {
+                        Task {
+                            await viewModel.runFunction(action, settings: settings)
+                        }
+                    }
+                    .disabled(viewModel.isStreamingSummary || viewModel.isStreamingFunction || (viewModel.ocrText.isEmpty && viewModel.summary.isEmpty))
+                }
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var functionResultSection: some View {
+        if let action = viewModel.selectedFunction {
+            let content = viewModel.functionOutputs[action] ?? ""
+            SectionCard(
+                title: action.resultTitle,
+                systemImage: action.systemImage,
+                trailing: AnyView(CopyButton(text: content))
+            ) {
+                StreamingTextView(
+                    text: content,
+                    isStreaming: viewModel.isStreamingFunction,
+                    placeholder: "选择功能后生成结果...",
+                    characterDelay: .milliseconds(22),
+                    showsSkeleton: true
+                )
             }
         }
     }
@@ -252,19 +297,33 @@ private struct ScreenshotTypeChip: View {
 private struct ResultFunctionChip: View {
     let title: String
     let systemImage: String
+    let isSelected: Bool
+    let isLoading: Bool
+    let action: () -> Void
 
     var body: some View {
-        Label(title, systemImage: systemImage)
+        Button(action: action) {
+            HStack(spacing: 6) {
+                if isLoading {
+                    ProgressView()
+                        .controlSize(.mini)
+                } else {
+                    Image(systemName: systemImage)
+                }
+                Text(title)
+            }
             .font(.caption.weight(.semibold))
-            .foregroundStyle(DS.ColorToken.textPrimary)
+            .foregroundStyle(isSelected ? DS.ColorToken.primary : DS.ColorToken.textPrimary)
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(DS.ColorToken.elevatedCard)
+            .background(isSelected ? DS.ColorToken.primary.opacity(0.12) : DS.ColorToken.elevatedCard)
             .clipShape(Capsule())
             .overlay(
                 Capsule()
-                    .stroke(DS.ColorToken.border, lineWidth: 1)
+                    .stroke(isSelected ? DS.ColorToken.primary.opacity(0.28) : DS.ColorToken.border, lineWidth: 1)
             )
+        }
+        .buttonStyle(.plain)
     }
 }
 

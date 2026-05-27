@@ -3,33 +3,45 @@ import Foundation
 struct ResultInsight: Equatable, Codable {
     enum Section: String, CaseIterable, Codable, Hashable {
         case summary
+        case intent
+        case visualUnderstanding
         case keyPoints
         case actions
         case explanation
         case risks
         case relatedQuestions
 
-        var title: String {
-            switch self {
-            case .summary:
-                return "总结"
-            case .keyPoints:
-                return "关键点"
-            case .actions:
-                return "行动项"
-            case .explanation:
-                return "解释"
-            case .risks:
-                return "风险"
-            case .relatedQuestions:
-                return "相关问题"
+        nonisolated var title: String {
+            NSLocalizedString(localizationKey, comment: "")
+        }
+
+        nonisolated var markdownHeading: String {
+            "## \(title)"
+        }
+
+        nonisolated var normalizedHeadingAliases: [String] {
+            localizedAliases.map(Self.normalizedHeading)
+        }
+
+        nonisolated static func matching(heading: String) -> Section? {
+            let normalized = normalizedHeading(heading)
+            return allCases.first {
+                $0.normalizedHeadingAliases.contains(normalized)
             }
         }
 
-        var systemImage: String {
+        nonisolated static func localizedTitle(matching heading: String) -> String? {
+            matching(heading: heading)?.title
+        }
+
+        nonisolated var systemImage: String {
             switch self {
             case .summary:
                 return "sparkles"
+            case .intent:
+                return "scope"
+            case .visualUnderstanding:
+                return "eye.fill"
             case .keyPoints:
                 return "list.bullet"
             case .actions:
@@ -42,9 +54,32 @@ struct ResultInsight: Equatable, Codable {
                 return "questionmark.bubble.fill"
             }
         }
+
+        private nonisolated var localizationKey: String {
+            "result.section.\(rawValue)"
+        }
+
+        private nonisolated var aliasesLocalizationKey: String {
+            "\(localizationKey).aliases"
+        }
+
+        private nonisolated var localizedAliases: [String] {
+            NSLocalizedString(aliasesLocalizationKey, comment: "")
+                .components(separatedBy: "|")
+                .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+                .filter { !$0.isEmpty }
+        }
+
+        private nonisolated static func normalizedHeading(_ heading: String) -> String {
+            heading
+                .trimmingCharacters(in: CharacterSet(charactersIn: "#:： "))
+                .lowercased()
+        }
     }
 
     var summary: String = ""
+    var intent: String = ""
+    var visualUnderstanding: String = ""
     var keyPoints: [String] = []
     var actions: [String] = []
     var explanation: String = ""
@@ -53,6 +88,8 @@ struct ResultInsight: Equatable, Codable {
 
     init(
         summary: String = "",
+        intent: String = "",
+        visualUnderstanding: String = "",
         keyPoints: [String] = [],
         actions: [String] = [],
         explanation: String = "",
@@ -60,6 +97,8 @@ struct ResultInsight: Equatable, Codable {
         relatedQuestions: [String] = []
     ) {
         self.summary = summary
+        self.intent = intent
+        self.visualUnderstanding = visualUnderstanding
         self.keyPoints = keyPoints
         self.actions = actions
         self.explanation = explanation
@@ -75,6 +114,8 @@ struct ResultInsight: Equatable, Codable {
         }
 
         summary = sections[.summary]?.joinedText ?? ""
+        intent = sections[.intent]?.joinedText ?? ""
+        visualUnderstanding = sections[.visualUnderstanding]?.joinedText ?? ""
         keyPoints = sections[.keyPoints]?.items ?? []
         actions = sections[.actions]?.items ?? []
         explanation = sections[.explanation]?.joinedText ?? ""
@@ -90,6 +131,10 @@ struct ResultInsight: Equatable, Codable {
         switch section {
         case .summary:
             return summary
+        case .intent:
+            return intent
+        case .visualUnderstanding:
+            return visualUnderstanding
         case .keyPoints:
             return keyPoints.markdownList
         case .actions:
@@ -110,21 +155,21 @@ struct ResultInsight: Equatable, Codable {
     static func visibleSections(for type: ScreenshotType) -> [Section] {
         switch type {
         case .chat:
-            return [.summary, .keyPoints, .actions, .relatedQuestions]
+            return [.summary, .intent, .keyPoints, .actions, .relatedQuestions]
         case .code:
-            return [.summary, .explanation, .risks, .actions, .relatedQuestions]
+            return [.summary, .intent, .visualUnderstanding, .explanation, .risks, .actions, .relatedQuestions]
         case .social:
-            return [.summary, .keyPoints, .explanation, .relatedQuestions]
+            return [.summary, .intent, .keyPoints, .explanation, .relatedQuestions]
         case .email:
-            return [.summary, .keyPoints, .actions, .risks, .relatedQuestions]
+            return [.summary, .intent, .keyPoints, .actions, .risks, .relatedQuestions]
         case .table, .chart:
-            return [.summary, .keyPoints, .explanation, .risks, .relatedQuestions]
+            return [.summary, .intent, .visualUnderstanding, .keyPoints, .explanation, .risks, .actions, .relatedQuestions]
         case .ui:
-            return [.summary, .keyPoints, .explanation, .risks, .actions]
+            return [.summary, .intent, .visualUnderstanding, .keyPoints, .explanation, .risks, .actions]
         case .document, .pdf:
-            return [.summary, .keyPoints, .explanation, .relatedQuestions]
+            return [.summary, .intent, .keyPoints, .explanation, .relatedQuestions]
         case .unknown:
-            return [.summary, .keyPoints, .actions, .relatedQuestions]
+            return [.summary, .intent, .keyPoints, .actions, .relatedQuestions]
         }
     }
 
@@ -150,26 +195,7 @@ struct ResultInsight: Equatable, Codable {
     }
 
     private static func section(fromHeading line: String) -> Section? {
-        let normalized = line
-            .trimmingCharacters(in: CharacterSet(charactersIn: "#:： "))
-            .lowercased()
-
-        switch normalized {
-        case "summary", "总结", "摘要":
-            return .summary
-        case "key points", "keypoints", "关键点", "重点":
-            return .keyPoints
-        case "actions", "action items", "行动项", "待办", "待办事项":
-            return .actions
-        case "explanation", "解释", "说明":
-            return .explanation
-        case "risks", "风险", "风险点":
-            return .risks
-        case "related questions", "relatedquestions", "相关问题", "追问":
-            return .relatedQuestions
-        default:
-            return nil
-        }
+        Section.matching(heading: line)
     }
 }
 
