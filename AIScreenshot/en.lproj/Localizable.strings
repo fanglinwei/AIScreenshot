@@ -18,3 +18,21 @@
 "result.section.explanation.aliases" = "Explanation|解释|说明";
 "result.section.risks.aliases" = "Risks|风险|风险点";
 "result.section.relatedQuestions.aliases" = "Related Questions|RelatedQuestions|相关问题|追问";
+
+"result.function.explain.title" = "Explain";
+"result.function.translate.title" = "Translate";
+"result.function.actionItems.title" = "Action Items";
+"result.function.debug.title" = "Debug";
+"result.function.flashcards.title" = "Make Flashcards";
+
+"result.function.explain.resultTitle" = "Explanation";
+"result.function.translate.resultTitle" = "Translation";
+"result.function.actionItems.resultTitle" = "Action Items";
+"result.function.debug.resultTitle" = "Debug Suggestions";
+"result.function.flashcards.resultTitle" = "Flashcards";
+
+"result.function.explain.meaningHeading" = "What It Means";
+"result.function.nextStepHeading" = "Next Step";
+"result.function.noteHeading" = "Note";
+"result.function.needConfirmHeading" = "Need Confirm";
+"result.function.checklistHeading" = "Checklist";

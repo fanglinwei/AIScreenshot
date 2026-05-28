@@ -10,33 +10,11 @@ enum ResultFunctionAction: String, CaseIterable, Identifiable, Hashable {
     var id: String { rawValue }
 
     var title: String {
-        switch self {
-        case .explain:
-            return "Explain"
-        case .translate:
-            return "Translate"
-        case .actionItems:
-            return "Action Items"
-        case .debug:
-            return "Debug"
-        case .flashcards:
-            return "Make Flashcards"
-        }
+        NSLocalizedString("result.function.\(rawValue).title", comment: "")
     }
 
     var resultTitle: String {
-        switch self {
-        case .explain:
-            return "解释结果"
-        case .translate:
-            return "翻译结果"
-        case .actionItems:
-            return "行动项"
-        case .debug:
-            return "调试建议"
-        case .flashcards:
-            return "闪卡"
-        }
+        NSLocalizedString("result.function.\(rawValue).resultTitle", comment: "")
     }
 
     var systemImage: String {
@@ -112,41 +90,41 @@ enum ResultFunctionAction: String, CaseIterable, Identifiable, Hashable {
         switch self {
         case .explain:
             return """
-            ## Explain
+            ## \(resultTitle)
             这是一张\(screenshotType.displayName)截图。用户大概率想快速理解截图里的关键信息，以及下一步该怎么处理。
 
-            ## What It Means
+            ## \(NSLocalizedString("result.function.explain.meaningHeading", comment: ""))
             \(preview.isEmpty ? "当前缺少可解释的文字内容。" : preview)
 
-            ## Next Step
+            ## \(NSLocalizedString("result.function.nextStepHeading", comment: ""))
             - 结合原截图确认关键按钮、金额、错误提示或责任人。
             - 如需更深度解释，请配置 AI 服务后重新生成。
             """
         case .translate:
             return """
-            ## Translate
+            ## \(resultTitle)
             本地模式无法进行高质量跨语言翻译，但已提取可翻译内容：
 
             \(preview.isEmpty ? "未识别到可翻译文本。" : preview)
 
-            ## Note
+            ## \(NSLocalizedString("result.function.noteHeading", comment: ""))
             配置 AI 服务后可保留语气、上下文和专业术语进行完整翻译。
             """
         case .actionItems:
             let candidates = actionCandidates(from: cleanOCR)
             return """
-            ## Action Items
+            ## \(resultTitle)
             \(candidates.isEmpty ? "- 检查截图中最重要的提示，并决定是否需要回复、保存、付款、修复或继续阅读。" : candidates.map { "- \($0)" }.joined(separator: "\n"))
 
-            ## Need Confirm
+            ## \(NSLocalizedString("result.function.needConfirmHeading", comment: ""))
             - 是否存在截止时间、责任人、金额或不可逆操作。
             """
         case .debug:
             return """
-            ## Debug
+            ## \(resultTitle)
             \(debugHint(for: screenshotType, text: cleanOCR))
 
-            ## Checklist
+            ## \(NSLocalizedString("result.function.checklistHeading", comment: ""))
             - 找到截图中的错误提示、状态码或异常文案。
             - 记录触发步骤和当前页面状态。
             - 对照最近改动或输入条件逐项排查。
@@ -154,7 +132,7 @@ enum ResultFunctionAction: String, CaseIterable, Identifiable, Hashable {
         case .flashcards:
             let cards = flashcards(from: preview, screenshotType: screenshotType)
             return """
-            ## Flashcards
+            ## \(resultTitle)
             \(cards.joined(separator: "\n\n"))
             """
         }
